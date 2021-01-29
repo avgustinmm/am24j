@@ -1,0 +1,9 @@
+*.iml
+.idea
+.settings
+.classpath
+.project
+.log4j
+target
+*.zip
+*.tar.gz

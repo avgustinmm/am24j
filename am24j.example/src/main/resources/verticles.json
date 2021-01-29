@@ -1,0 +1,11 @@
+{
+  "com.am2.verticles.http.HTTP": {
+    "config": {
+      "httpPort": 8080,
+      "httpsPort": -1
+    },
+    "instances": 4,
+    "worker": false,
+    "workerPoolSize": 10
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "configuration": {
+    "status": "error", 
+    "monitorInterval": 30,
+    "appenders": {
+      "Console": {
+        "name": "Console",
+        "PatternLayout": { "pattern": "[%d{yyyy-MMM-dd HH:mm:ss.SSS z}{UTC}][%logger{36}] %-5level %msg%n"}
+      }
+    },
+    
+    "loggers": {
+      "root": { 
+        "level": "info",
+        "AppenderRef": [{ "ref": "Console"}]
+      },
+      "logger": [{
+	      "name": "am24j",
+	      "level": "debug",
+	      "additivity": "false",
+          "AppenderRef": [{ "ref": "Console"}]
+	      }]
+    }
+  }
+}
