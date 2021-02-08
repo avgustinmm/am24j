@@ -8,10 +8,15 @@
   <packaging>pom</packaging>
   
   <modules>
-    <module>am24j.launcher</module>
+    <!-- libs -->
+    <module>am24j.commons</module>
+    <module>am24j.avro</module>
     <module>am24j.inject</module>
+    
+    <!-- runtime -->
+    <module>am24j.launcher</module>
     <module>am24j.runtime</module>
-	
+    
     <module>am24j.example</module>
   </modules>
 </project>
