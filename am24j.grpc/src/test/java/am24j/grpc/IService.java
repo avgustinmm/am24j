@@ -13,31 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.example.services;
+package am24j.grpc;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow.Subscriber;
 
-import am24j.vertx.http.Http;
-import io.vertx.core.Handler;
-import io.vertx.core.http.HttpServerRequest;
+import am24j.rpc.Service;
 
-/**
- * @author avgustinmm
- */
-@Singleton
-public class HelloWorld implements Http.HttpHandler {
-  
-  @Inject
-  public HelloWorld() {}
-  
-  @Override
-  public String path() {
-    return "/hello";
-  }
+@Service(serviceName = "test", version = "0.0")
+public interface IService {
 
-  @Override
-  public Handler<HttpServerRequest> handler() {
-    return handler -> handler.response().setStatusCode(200).end("Hellow World!");
-  }
+  public CompletionStage<Void> voidCall();
+ 
+  public CompletionStage<String> getCall(final int i, final String str);
+   
+  public CompletionStage<String> throwExc(final boolean completeExceptionally);
+
+  public void stream(final int i, final Subscriber<String> subscriber);
 }

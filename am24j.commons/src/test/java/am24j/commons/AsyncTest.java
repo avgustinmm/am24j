@@ -13,31 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.example.services;
+package am24j.commons;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 
-import am24j.vertx.http.Http;
-import io.vertx.core.Handler;
-import io.vertx.core.http.HttpServerRequest;
+import org.junit.Test;
 
-/**
- * @author avgustinmm
- */
-@Singleton
-public class HelloWorld implements Http.HttpHandler {
-  
-  @Inject
-  public HelloWorld() {}
-  
-  @Override
-  public String path() {
-    return "/hello";
-  }
+public class AsyncTest {
 
-  @Override
-  public Handler<HttpServerRequest> handler() {
-    return handler -> handler.response().setStatusCode(200).end("Hellow World!");
+  @Test
+  public void seq() {
+    final List<Supplier<CompletionStage<Void>>> all = new ArrayList<>();
+    for (int i = 0; i < 10_000; i++) {
+      all.add(() -> CompletableFuture.completedFuture(null));
+    }
+    ASync.<Void>sequentially(Utils.map(all.iterator(), Supplier::get)).toCompletableFuture().join();
   }
 }

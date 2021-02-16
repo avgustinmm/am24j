@@ -13,31 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.example.services;
+package am24j.rpc;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-import am24j.vertx.http.Http;
-import io.vertx.core.Handler;
-import io.vertx.core.http.HttpServerRequest;
+import javax.inject.Qualifier;
 
 /**
  * @author avgustinmm
  */
-@Singleton
-public class HelloWorld implements Http.HttpHandler {
+@Retention(RetentionPolicy.RUNTIME)
+@Qualifier
+public @interface Service {
   
-  @Inject
-  public HelloWorld() {}
-  
-  @Override
-  public String path() {
-    return "/hello";
-  }
-
-  @Override
-  public Handler<HttpServerRequest> handler() {
-    return handler -> handler.response().setStatusCode(200).end("Hellow World!");
-  }
+  public String serviceName() default "";
+  public String version() default "0.0";
 }

@@ -15,6 +15,7 @@
  */
 package am24j.commons;
 
+import java.util.Iterator;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
@@ -60,6 +61,44 @@ public class ASync {
         }
       }
     });
+  }
+  
+  public static CompletionStage<Void> sequentiallySkipErrors(final Iterator<CompletionStage<Void>> i) {
+    return sequentially(Utils.map(i, cs -> cs.exceptionally(t -> null)));
+  }
+  // gets furst non error non null / fail on error
+  public static CompletionStage<Void> sequentially(final Iterator<CompletionStage<Void>> i) {
+    final CompletableFuture<Void> future = new CompletableFuture<>();
+    next(false, i, future);
+    return future;
+  }
+  
+  public static <T> CompletionStage<T> sequentiallyGetSkipErrors(final Iterator<CompletionStage<T>> i) {
+    return sequentiallyGet(Utils.map(i, cs -> cs.exceptionally(t -> null)));
+  }
+  // gets furst non error non null / fail on error
+  public static <T> CompletionStage<T> sequentiallyGet(final Iterator<CompletionStage<T>> i) {
+    final CompletableFuture<T> future = new CompletableFuture<>();
+    next(true,  i, future);
+    return future;
+  }
+  
+  private static <T> void next(final boolean get, final Iterator<CompletionStage<T>> i, final CompletableFuture<T> future) {
+    if (i.hasNext()) {        
+      i.next().whenCompleteAsync((r, e) -> { // asyn in order to prevent StackOverflowError if many are completed in same thread
+        if (e == null) {
+          if (get && r != null) {
+            future.complete(r);
+          } else {
+            next(get, i, future);
+          }
+        } else {
+          future.completeExceptionally(e);
+        }
+      });
+    } else {
+      future.complete(null);
+    }
   }
   
   public static class Lock {

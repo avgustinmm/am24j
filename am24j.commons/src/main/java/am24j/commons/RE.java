@@ -13,31 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.example.services;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
-import am24j.vertx.http.Http;
-import io.vertx.core.Handler;
-import io.vertx.core.http.HttpServerRequest;
+package am24j.commons;
 
 /**
  * @author avgustinmm
  */
-@Singleton
-public class HelloWorld implements Http.HttpHandler {
-  
-  @Inject
-  public HelloWorld() {}
-  
-  @Override
-  public String path() {
-    return "/hello";
-  }
+public class RE {
 
-  @Override
-  public Handler<HttpServerRequest> handler() {
-    return handler -> handler.response().setStatusCode(200).end("Hellow World!");
+  private RE() {}
+  
+  public static RuntimeException toRuntime(final Throwable t) {
+    return t instanceof RuntimeException ? (RuntimeException)t : new RuntimeException(t);
   }
 }

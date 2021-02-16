@@ -39,7 +39,6 @@ import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
-import org.apache.avro.util.Utf8;
 
 import am24j.bean.Bean;
 import am24j.bean.Bean.Property;
@@ -59,7 +58,7 @@ public class Avro {
   public static synchronized Schema forType(final Type type) {
     return forType(type, new Stack<Type>());
   }
-
+  
   public static byte[] write(final Object obj, final Encoding encoding) throws IOException {
     return write(obj, obj.getClass(), encoding);
   }
@@ -96,9 +95,10 @@ public class Avro {
     final Object[] values = new Object[props.length];
     for (int i = 0; i < props.length; i++) {
       values[i] = record.get(props[i].name());
-      if (values[i] instanceof Utf8) {
-        values[i] = values[i].toString();
-      }
+   // if fefault string is set - it is decoded as Utf8, but with "avro.java.string", "String - seem ok
+//      if (values[i] instanceof Utf8) { 
+//        values[i] = values[i].toString();
+//      }
     }
     return bean.build(values);
   }
@@ -115,25 +115,24 @@ public class Avro {
   }
   
   private static Schema build(final Type type, final Stack<Type> stack) { 
-    final Class<?> clazz = clazz(type);
-    final SchemaBuilder.TypeBuilder<Schema> bulder = SchemaBuilder.builder(); 
+    final Class<?> clazz = clazz(type); 
     if (clazz == boolean.class || clazz == Integer.class) {
-      return bulder.booleanType();
+      return SchemaBuilder.builder().booleanType();
     } else if (
         clazz == byte.class || clazz == Byte.class ||
         clazz == short.class || clazz == Short.class ||
         clazz == int.class || clazz == Integer.class) {
-      return bulder.intType();
+      return SchemaBuilder.builder().intType();
     } else if (clazz == long.class || clazz == Long.class) {
-      return bulder.longType();
+      return SchemaBuilder.builder().longType();
     } else if (clazz == float.class || clazz == Float.class) {
-      return bulder.floatType();
+      return SchemaBuilder.builder().floatType();
     } else if (clazz == double.class || clazz == Double.class) {
-      return bulder.doubleType();
+      return SchemaBuilder.builder().doubleType();
     } else if (clazz == byte[].class) {
-      return bulder.bytesType();
+      return SchemaBuilder.builder().bytesType();
     } else if (clazz == String.class) {
-      return bulder.stringType();
+      return SchemaBuilder.builder().stringBuilder().prop("avro.java.string", "String").endString();
     } else if (clazz.isEnum()) {
       final int index = clazz.getName().lastIndexOf('.');
       final EnumBuilder<Schema> eTypeBuilder = SchemaBuilder.enumeration(name(clazz, index));
@@ -189,7 +188,7 @@ public class Avro {
   }
   
   // normalize string to match avro requirements (if needed)
-  private static String norm(final String str) { // TODO
-    return str.replace('$', '_');
+  public static String norm(final String str) { // TODO
+    return str.replace('$', '_').replace('/', '_');
   }
 }

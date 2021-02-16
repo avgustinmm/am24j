@@ -13,31 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.example.services;
+package am24j.commons;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import java.util.Iterator;
+import java.util.function.Function;
 
-import am24j.vertx.http.Http;
-import io.vertx.core.Handler;
-import io.vertx.core.http.HttpServerRequest;
+public class Utils {
 
-/**
- * @author avgustinmm
- */
-@Singleton
-public class HelloWorld implements Http.HttpHandler {
+  private Utils() {}
   
-  @Inject
-  public HelloWorld() {}
-  
-  @Override
-  public String path() {
-    return "/hello";
-  }
+  public static <S, T> Iterator<T> map(final Iterator<S> i, final Function<S, T> maoFn) {
+    return new Iterator<T>() {
+      
+      @Override
+      public boolean hasNext() {
+        return i.hasNext();
+      }
 
-  @Override
-  public Handler<HttpServerRequest> handler() {
-    return handler -> handler.response().setStatusCode(200).end("Hellow World!");
+      @Override
+      public T next() {
+        return maoFn.apply(i.next());
+      }      
+    };
   }
 }

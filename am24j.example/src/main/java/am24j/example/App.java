@@ -15,9 +15,6 @@
  */
 package am24j.example;
 
-import com.am2.rt.vertx.http.Http;
-import com.am2.rt.vertx.http.RestEasy;
-
 import am24j.example.services.HelloWorld;
 import am24j.example.services.JAXRS1;
 import am24j.example.services.JAXRS2;
@@ -26,6 +23,8 @@ import am24j.rt.config.Config;
 import am24j.vertx.HZCluster;
 import am24j.vertx.Instance;
 import am24j.vertx.Shell;
+import am24j.vertx.http.Http;
+import am24j.vertx.http.RestEasy;
 
 /**
  * @author avgustinmm

@@ -19,7 +19,7 @@ import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 
-import com.am2.rt.vertx.http.RestEasy.JAXRS;
+import am24j.vertx.http.RestEasy.JAXRS;
 
 /**
  * @author avgustinmm

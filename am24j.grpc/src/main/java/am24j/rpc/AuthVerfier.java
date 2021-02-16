@@ -13,31 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.example.services;
+package am24j.rpc;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import java.util.concurrent.CompletionStage;
 
-import am24j.vertx.http.Http;
-import io.vertx.core.Handler;
-import io.vertx.core.http.HttpServerRequest;
+public interface AuthVerfier<T> {
 
-/**
- * @author avgustinmm
- */
-@Singleton
-public class HelloWorld implements Http.HttpHandler {
-  
-  @Inject
-  public HelloWorld() {}
-  
-  @Override
-  public String path() {
-    return "/hello";
-  }
-
-  @Override
-  public Handler<HttpServerRequest> handler() {
-    return handler -> handler.response().setStatusCode(200).end("Hellow World!");
-  }
+  public CompletionStage<Ctx> ctx(final T auth);
 }
