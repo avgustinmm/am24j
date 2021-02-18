@@ -16,6 +16,7 @@
     <!-- runtime -->
     <module>am24j.launcher</module>
     <module>am24j.runtime</module>
+    <module>am24j.grpc</module>
     
     <module>am24j.example</module>
   </modules>

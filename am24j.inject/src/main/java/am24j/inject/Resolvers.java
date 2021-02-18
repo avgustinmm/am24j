@@ -215,7 +215,7 @@ public class Resolvers {
       if (clazz.isInterface()) {
         final Annotation implementedBy = clazz.getAnnotation(implementedByClass); // TODO defone own
         if (implementedBy == null) {
-          throw InjectException.of("Can't create interface class " + clazz.getName() + "!");
+          throw NOT_FOUND;
         } else {
           return () -> {
             try {

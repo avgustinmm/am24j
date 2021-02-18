@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,7 @@ import am24j.commons.Utils;
 import am24j.rpc.AuthVerfier;
 import am24j.rpc.Ctx;
 import am24j.rpc.Service;
+import am24j.rpc.Remote;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor.MethodType;
 import io.grpc.ServerCall;
@@ -61,11 +63,23 @@ public class Server implements AutoCloseable {
   private final Future<String> deployment;
   
   @Inject
-  public Server(final List<Object> services, final List<AuthVerfier<Metadata>> authVerfiers, final DeploymentOptions options, final Vertx vertx) {
-    LOG.info("Star (options: {})", options);
+  public Server(
+      @Remote final List<Object> services, 
+      final List<AuthVerfier<Metadata>> authVerfiers, 
+      @Named("grpc_server.json") final DeploymentOptions options, 
+      final Vertx vertx) {
+    LOG.info("Star (options: {}, servicesL {})", options.toJson(), services);
     this.authVerfiers = authVerfiers;
     this.vertx = vertx;
     final List<ServerServiceDefinition> ssdList = services.stream().flatMap(this::serviceDefinitions).collect(Collectors.toList());
+    if (LOG.isInfoEnabled()) {
+      ssdList.forEach(ssd -> {
+        LOG.info("  Start sertvice: {}", ssd.getServiceDescriptor().getName());
+        ssd.getServiceDescriptor().getMethods().forEach(md -> {
+          LOG.info("    > {}", md.getFullMethodName());
+        });
+      });
+    }
     deployment = vertx.deployVerticle(() -> new ServerVerticle(ssdList), options);
   }
   

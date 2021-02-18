@@ -147,6 +147,12 @@ public class Injector {
       final Provider<T> cached = (Provider<T>)bindings.get(key);
       if (cached == null) {
         provider = (Provider<T>)newProvider(key, point);
+        final Class<?> clazz = Utils.clazz(key.type());
+        final Type providerType = Utils.providerType(clazz);
+        if (providerType != null) {
+          // TODO - add test for: X implements Provider<Y> => add X as provider for Y
+          bindings.put(Key.of(providerType, key.qualifer().orElse(null)), (Provider<Object>)provider);
+        }
         bindings.put(key, (Provider<Object>)provider);
       } else {
         provider = cached;

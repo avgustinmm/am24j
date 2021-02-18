@@ -66,8 +66,8 @@ class Common {
   static String serviceName(final Class<?> iClass) {
     final Service serviceAnn = iClass.getAnnotation(Service.class);
     final String serviceName = 
-      (serviceAnn.serviceName().length() == 0 ? iClass.getName() : serviceAnn.serviceName()) +
-      (serviceAnn.version().length() == 0 ? "" : '_'+ serviceAnn.version());
+      (serviceAnn == null || serviceAnn.serviceName().length() == 0 ? iClass.getName() : serviceAnn.serviceName()) +
+      (serviceAnn == null || serviceAnn.version().length() == 0 ? "" : '_'+ serviceAnn.version());
     return serviceName;
   }
   

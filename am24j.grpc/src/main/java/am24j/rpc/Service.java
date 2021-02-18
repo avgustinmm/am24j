@@ -18,15 +18,12 @@ package am24j.rpc;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import javax.inject.Qualifier;
-
 /**
  * @author avgustinmm
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Qualifier
 public @interface Service {
   
-  public String serviceName() default "";
-  public String version() default "0.0";
+  public String serviceName();
+  public String version();
 }

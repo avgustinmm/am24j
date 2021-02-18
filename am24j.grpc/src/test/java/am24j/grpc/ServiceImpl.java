@@ -19,6 +19,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
+
+import am24j.rpc.Remote;
+
 import java.util.concurrent.Semaphore;
 
 /**
@@ -35,6 +38,7 @@ import java.util.concurrent.Semaphore;
  * 
  * @author avgustinmm
  */
+@Remote
 public class ServiceImpl implements IService {
 
   @Override

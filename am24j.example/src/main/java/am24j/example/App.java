@@ -32,7 +32,7 @@ import am24j.vertx.http.RestEasy;
 public class App {
   
   public static void main(final String[] args) throws Exception {
-    Starter.start(new Class<?>[] {
+    Starter.main(new Class<?>[] {
       Config.class,
       
       am24j.rt.hz.Instance.class,      

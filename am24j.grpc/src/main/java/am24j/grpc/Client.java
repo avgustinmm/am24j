@@ -30,6 +30,7 @@ import java.util.concurrent.Flow.Subscription;
 import java.util.function.Supplier;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,8 +63,8 @@ public class Client implements AutoCloseable {
   private List<ClientVerticle> clientVerticles = Collections.synchronizedList(new ArrayList<>());
   
   @Inject
-  public Client(final DeploymentOptions options, final Vertx vertx) {
-    LOG.info("Start (options: {})", options);
+  public Client(@Named("grpc_client.json") final DeploymentOptions options, final Vertx vertx) {
+    LOG.info("Start (options: {})", options.toJson());
     this.vertx = vertx;
     deployment = vertx.deployVerticle(() -> {
       final ClientVerticle clientVerticle = new ClientVerticle();
