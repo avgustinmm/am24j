@@ -33,7 +33,7 @@ import io.vertx.core.Vertx;
  */
 public abstract class Component<T extends Verticle> implements AutoCloseable {
 
-  private static final Logger LOG = Ctx.logger("Component");
+  private static final Logger LOG = Ctx.logger("component");
   
   private final Vertx vertx;
   private final String deploymentID;
@@ -49,8 +49,7 @@ public abstract class Component<T extends Verticle> implements AutoCloseable {
         future.completeExceptionally(ar.cause());
       }
     });
-    deploymentID = future.join();
-  }
+    deploymentID = future.join();  }
   
   @Override
   public void close() {

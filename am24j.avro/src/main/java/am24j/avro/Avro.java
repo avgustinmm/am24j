@@ -51,12 +51,21 @@ public class Avro {
   }
 
   public static Schema forClaxx(final Class<?> clazz) {
-    return forType(clazz);
+    return forType((Type)clazz);
   }
   
   private static final Map<Type, Schema> SCHEMAS = new HashMap<>();
   public static synchronized Schema forType(final Type type) {
     return forType(type, new Stack<Type>());
+  }
+  
+  public static Schema forTypeNullable(final Class<?> clazz) {
+    return forTypeNullable((Type)clazz);
+  }
+  
+  private static final Map<Type, Schema> SCHEMAS_NULLABLE = new HashMap<>();
+  public static Schema forTypeNullable(final Type type) {
+    return SCHEMAS_NULLABLE.computeIfAbsent(type,  t -> SchemaBuilder.nullable().type(forType(type)));
   }
   
   public static byte[] write(final Object obj, final Encoding encoding) throws IOException {
@@ -95,7 +104,7 @@ public class Avro {
     final Object[] values = new Object[props.length];
     for (int i = 0; i < props.length; i++) {
       values[i] = record.get(props[i].name());
-   // if fefault string is set - it is decoded as Utf8, but with "avro.java.string", "String - seem ok
+   // if default string is set - it is decoded as Utf8, but with "avro.java.string", "String - seem ok
 //      if (values[i] instanceof Utf8) { 
 //        values[i] = values[i].toString();
 //      }

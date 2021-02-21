@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.grpc;
+package am24j.rpc.grpc;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 import java.util.function.Function;
@@ -30,6 +32,7 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import org.apache.avro.Protocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,9 +41,13 @@ import am24j.commons.Reflect;
 import am24j.commons.Utils;
 import am24j.rpc.AuthVerfier;
 import am24j.rpc.Ctx;
+import am24j.rpc.RPCException;
 import am24j.rpc.Service;
+import am24j.rpc.avro.Proto;
+import am24j.vertx.VertxUtils;
 import am24j.rpc.Remote;
 import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
 import io.grpc.MethodDescriptor.MethodType;
 import io.grpc.ServerCall;
 import io.grpc.ServerCall.Listener;
@@ -55,7 +62,7 @@ import io.vertx.core.Vertx;
 public class Server implements AutoCloseable {
   
   // TODO get it via runtime ctx (?) (inject it ?)
-  private static final Logger LOG = LoggerFactory.getLogger("am24j.grpc.server");
+  private static final Logger LOG = LoggerFactory.getLogger("am24j.rpc.grpc.server");
   
   private final List<AuthVerfier<Metadata>> authVerfiers;
   private final Vertx vertx;
@@ -71,7 +78,10 @@ public class Server implements AutoCloseable {
     LOG.info("Star (options: {}, servicesL {})", options.toJson(), services);
     this.authVerfiers = authVerfiers;
     this.vertx = vertx;
-    final List<ServerServiceDefinition> ssdList = services.stream().flatMap(this::serviceDefinitions).collect(Collectors.toList());
+    final List<ServerServiceDefinition> ssdList = 
+      services.stream()
+        .flatMap(this::serviceDefinitions)
+        .collect(Collectors.toList());
     if (LOG.isInfoEnabled()) {
       ssdList.forEach(ssd -> {
         LOG.info("  Start sertvice: {}", ssd.getServiceDescriptor().getName());
@@ -99,26 +109,22 @@ public class Server implements AutoCloseable {
   }
   
   private ServerServiceDefinition serviceDefinition(final Class<?> iClass, final Object service) {
-    final String serviceName = Common.serviceName(iClass);
+    final Protocol aProto = Proto.protocol(iClass);
     
-    final ServerServiceDefinition.Builder builder = ServerServiceDefinition.builder(serviceName);   
-    
+    final ServerServiceDefinition.Builder builder = ServerServiceDefinition.builder(aProto.getName());
     Arrays.stream(iClass.getMethods()) // all methods - not only declared
       .collect(Collectors.toMap(Reflect::methodSig, Function.identity()))
       .values()
-      .forEach(method -> {        
-        if (!Common.IS_SERVICE_METHOD.test(method)) {
-          throw new IllegalArgumentException("Method " + method + " of service interface " + method.getDeclaringClass().getName() + " is not a remote!");
-        }
-           
+      .forEach(method -> {
+        final MethodDescriptor<Object[], Object> md = Common.methodDescriptor(method, aProto);
         builder.addMethod(
           ServerMethodDefinition.create(
-            Common.methodDescriptor(method), 
+            md, 
             new ServerCallHandler<Object[], Object>() {
     
               @Override
               public Listener<Object[]> startCall(final ServerCall<Object[], Object> call, final Metadata headers) {
-                if (Common.methodType(method) == MethodType.UNARY) {
+                if (md.getType() == MethodType.UNARY) {
                   return new UnaryListener(call, headers, method, service);
                 } else {
                   return new ServerStreamListener(call, headers, method, service);
@@ -128,7 +134,7 @@ public class Server implements AutoCloseable {
       });
     return builder.build();
   }
-
+  
   private final class UnaryListener extends BaseListener {
     
     private UnaryListener(
@@ -141,13 +147,15 @@ public class Server implements AutoCloseable {
     protected void invoke(final Object[] args) {
       try {
         final Object result = method.invoke(service, args);
-        ((CompletionStage<?>)result).whenComplete((r, t) -> {
+        ((CompletionStage<?>)result).whenCompleteAsync((r, t) -> {
           if (t == null) {
             call.sendMessage(r);
           } else {
             error(t);
           }
-        });
+        }, vExecutor);
+      } catch (final InvocationTargetException e) {
+        error(e.getCause() == null ? e : e.getCause());
       } catch (final Throwable t) {
         error(t);
       }
@@ -161,25 +169,32 @@ public class Server implements AutoCloseable {
       
       @Override
       public void onSubscribe(final Subscription subscription) {
-        subscriptionFuture.complete(subscription);
+        vExecutor.execute(() -> subscriptionFuture.complete(subscription));
       }
 
       @Override
       public void onNext(final Object item) {
-        call.sendMessage(item);
-        if (call.isReady()) {
-          onReady();
-        }
+        vExecutor.execute(() -> {
+          call.sendMessage(item);
+          if (call.isReady()) {
+            onReady();
+          }
+        });
       }
 
       @Override
       public void onError(final Throwable throwable) {
-        subscriptionFuture.thenAccept(subscription -> subscription.cancel());
+        vExecutor.execute(() -> {
+          if (!subscriptionFuture.isDone()) {
+            subscriptionFuture.completeExceptionally(throwable);
+          }
+          error(throwable);
+        });
       }
 
       @Override
       public void onComplete() {
-        call.close(Status.OK, new Metadata());
+        vExecutor.execute(() -> call.close(Status.OK, new Metadata()));
       }
     };
     
@@ -196,7 +211,7 @@ public class Server implements AutoCloseable {
 
     @Override
     public void onReady() {
-      subscriptionFuture.thenAccept(subscription -> subscription.request(1));
+      subscriptionFuture.thenAcceptAsync(subscription -> subscription.request(1), vExecutor);
     }
 
     @Override
@@ -206,6 +221,8 @@ public class Server implements AutoCloseable {
         System.arraycopy(args, 0, realArgs, 0, args.length);
         realArgs[args.length] = subscriber;
         method.invoke(service, realArgs);
+      } catch (final InvocationTargetException e) {
+        error(e.getCause() == null ? e : e.getCause());
       } catch (final Throwable t) {
         error(t);
       }
@@ -217,7 +234,9 @@ public class Server implements AutoCloseable {
     protected final ServerCall<Object[], Object> call;
     protected final Method method;
     protected final Object service;
-
+    
+    protected final Executor vExecutor;
+    
     private final CompletionStage<Ctx> ctxFuture;
     private final CompletableFuture<Void> ready = new CompletableFuture<>(); // when halfClosed is received, then can send message
 
@@ -227,20 +246,22 @@ public class Server implements AutoCloseable {
       this.call = call;
       this.method = method;
       this.service = service;
+      
+      vExecutor = VertxUtils.ctxExecutor(vertx);
 
       ctxFuture = ASync
         .sequentiallyGetSkipErrors(
           Utils.map(
             authVerfiers.iterator(), 
             authVerifier -> authVerifier.ctx(headers).thenApply(ctx -> ctx == Ctx.NULL ? null : ctx))) // nulls Ctx.NULL in order to proceed thurder
-        .thenApply(ctx -> ctx == null ? Ctx.NULL : ctx) // if null - sest to Ctx.NULL
-        .whenComplete((ctx, error) -> {
+        .thenApply(ctx -> ctx == null ? Ctx.NULL : ctx) // if null - set to Ctx.NULL
+        .whenCompleteAsync((ctx, error) -> {
           if (error == null) {
-            call.request(1); // data, otherwise neither message non half is receuved
+            call.request(1); // data, otherwise neither message non half is received
           } else {
             call.close(Status.UNAUTHENTICATED, new Metadata());
           }
-        })
+        }, vExecutor)
         .thenCombine(ready, (ctx, v) -> ctx);
     }
 
@@ -258,7 +279,9 @@ public class Server implements AutoCloseable {
     protected abstract void invoke(final Object[] args);
 
     protected void error(final Throwable t) {
-      call.close(Status.INTERNAL, new Metadata()); // TODO proper error
+      final String uuid = RPCException.uuid();
+      LOG.error("[{}] Call feiled!", t);
+      call.sendMessage(new am24j.rpc.avro.RPCException().setUUID(uuid).setMessage(t.getMessage()).setType(t.getClass().getName()));
     }
   }
 }

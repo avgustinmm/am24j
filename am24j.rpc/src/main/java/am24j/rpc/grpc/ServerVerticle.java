@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.grpc;
+package am24j.rpc.grpc;
 
 import java.util.List;
 

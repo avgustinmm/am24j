@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.grpc;
+package am24j.rpc.grpc;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
@@ -35,6 +35,8 @@ import javax.inject.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import am24j.rpc.avro.Proto;
+import am24j.rpc.avro.RPCException;
 import io.grpc.CallCredentials;
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
@@ -43,7 +45,6 @@ import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import io.grpc.ClientCall.Listener;
-import io.grpc.Metadata.Key;
 import io.grpc.ManagedChannel;
 import io.grpc.MethodDescriptor.MethodType;
 import io.vertx.core.DeploymentOptions;
@@ -53,9 +54,7 @@ import io.vertx.core.Vertx;
 public class Client implements AutoCloseable {
 
   // TODO get it via runtime ctx (?) (inject it ?)
-  private static final Logger LOG = LoggerFactory.getLogger("am24j.grpc.client");
-
-  private static final Key<String> AUTHENTICATE = Key.of("WWW-Authenticate", Metadata.ASCII_STRING_MARSHALLER);
+  private static final Logger LOG = LoggerFactory.getLogger("am24j.rpc.grpc.client");
   
   private final Vertx vertx;
   
@@ -104,7 +103,7 @@ public class Client implements AutoCloseable {
                 final Executor appExecutor, 
                 final MetadataApplier applier) {
               final Metadata meta = new Metadata();
-              meta.put(AUTHENTICATE, credential);
+              meta.put(Common.WWW_AUTHENTICATE, credential);
               applier.apply(meta);
             }
   
@@ -114,20 +113,21 @@ public class Client implements AutoCloseable {
           callOptions = CallOptions.DEFAULT.withCallCredentials(credentials);
         }
         
-        final MethodDescriptor<Object[], Object> methodDescriptor = Common.methodDescriptor(method);
+        final MethodDescriptor<Object[], Object> methodDescriptor = Common.methodDescriptor(method, Proto.protocol(method.getDeclaringClass()));
         final ClientCall<Object[], Object> call = channel().newCall(methodDescriptor, callOptions);
         final Object result;
         if (methodDescriptor.getType() == MethodType.UNARY) {
           final CompletableFuture<Object> future = new CompletableFuture<>();
           call.start(new Unaryistener(call, future), new Metadata());
           result = future;
+          call.sendMessage(args);
         } else {
           final Object[] realArgs = new Object[args.length - 1];
           System.arraycopy(args, 0, realArgs, 0, realArgs.length);
           call.start(new StreamListener(call, (Subscriber<Object>)args[realArgs.length]), new Metadata());
           result = null;
+          call.sendMessage(realArgs);
         }
-        call.sendMessage(args);
         call.halfClose();
         return result;
       }
@@ -155,7 +155,11 @@ public class Client implements AutoCloseable {
 
     @Override
     public void onMessage(final Object message) {
-      future.complete(message);
+      if (message instanceof RPCException) {
+        future.completeExceptionally(((RPCException)message).toRPC());
+      } else {
+        future.complete(message);
+      }
     }
 
     @Override
@@ -206,7 +210,11 @@ public class Client implements AutoCloseable {
     
     @Override
     public void onMessage(final Object message) {
-      subscriber.onNext(message);
+      if (message instanceof RPCException) {
+        subscriber.onNext(((RPCException)message).toRPC());
+      } else {
+        subscriber.onNext(message);
+      }
     }
 
     @Override

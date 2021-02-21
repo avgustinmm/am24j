@@ -58,7 +58,7 @@ public class Http extends Component<Verticle> {
         
         server = vertx.createHttpServer(new HttpServerOptions(config()));
         server.requestHandler(router);
-        server.listen();
+        server.listen().map(v -> (Void)null).onComplete(startPromise);
       }
       
       @Override

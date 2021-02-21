@@ -13,21 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.grpc;
+package am24j.vertx;
 
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Executor;
 
-import am24j.rpc.Service;
+import io.vertx.core.Context;
+import io.vertx.core.Vertx;
 
-@Service(serviceName = "test", version = "0.0")
-public interface IService {
+public class VertxUtils {
+  
+  public static Executor ctxExecutor(final Vertx vertx) {
+    return new Executor() {
 
-  public CompletionStage<Void> voidCall();
- 
-  public CompletionStage<String> getCall(final int i, final String str);
-   
-  public CompletionStage<String> throwExc(final boolean completeExceptionally);
-
-  public void stream(final int i, final Subscriber<String> subscriber);
+      private final Context context = vertx.getOrCreateContext();;
+      
+      @Override
+      public void execute(final Runnable command) {
+        context.runOnContext(v -> command.run());
+      }
+    };
+  }
 }

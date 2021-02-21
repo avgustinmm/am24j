@@ -115,6 +115,20 @@ public class Bean<T>  {
     }
   }
   
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("Bean (");
+    if (constructor == null) {
+      sb.append("builder [").append(builder[0].getName()).append("/").append(builder[1].getName()).append("])\n");
+    } else {
+      sb.append("constructor)\n");
+    }
+    for (int i = 0; i < props.length; i++) {
+      sb.append("  ").append(props[i]).append("\n");
+    }
+    return sb.toString();
+  }
+  
   private static Method[] builder(final Class<?> clazz) throws NoSuchMethodException, SecurityException {
     final Method[] builder = builder("builder", clazz);
     if (builder != null) {
@@ -179,11 +193,6 @@ public class Bean<T>  {
       this.setter = setter;
     }
     
-    @Override
-    public int compareTo(final Property p) {
-      return name.compareTo(p.name);
-    }
-    
     public String name() {
       return name;
     }
@@ -196,7 +205,17 @@ public class Bean<T>  {
       return !clazz(type()).isPrimitive();
     }
     
-    private void set(final Object value, final Object to) throws Throwable {
+    @Override
+    public int compareTo(final Property p) {
+      return name.compareTo(p.name);
+    }
+    
+    @Override
+    public String toString() {
+      return name + " (getter: " + getter + ", setter: " + setter + ")";
+    }
+    
+    public void set(final Object value, final Object to) throws Throwable {
       try {
         setter.invoke(to, value);
       } catch (final InvocationTargetException e) {
@@ -204,7 +223,7 @@ public class Bean<T>  {
       }
     }
     
-    private Object get(final Object from) throws Throwable {
+    public Object get(final Object from) throws Throwable {
       try {
         final Object value = getter.invoke(from);
         return value instanceof Optional ? ((Optional<?>)value).orElse(null) : value;

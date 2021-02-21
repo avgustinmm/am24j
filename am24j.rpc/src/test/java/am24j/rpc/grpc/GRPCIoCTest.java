@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.grpc;
+package am24j.rpc.grpc;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -28,6 +28,8 @@ import am24j.commons.Log4j2Config;
 import am24j.inject.Injector.Key;
 import am24j.rpc.AuthVerfier;
 import am24j.rpc.Ctx;
+import am24j.rpc.IService;
+import am24j.rpc.ServiceImpl;
 import am24j.rt.Starter;
 import am24j.rt.config.Config;
 import am24j.vertx.Instance;
@@ -37,7 +39,7 @@ import io.grpc.Metadata;
 public class GRPCIoCTest {
 
   static {
-    Log4j2Config.setUp(Level.INFO, Level.TRACE, "io.grpc");
+    Log4j2Config.setUp(Level.INFO, Level.TRACE, "am24j.rpc.grpc");
   }
 
   private static Starter sStarter;
