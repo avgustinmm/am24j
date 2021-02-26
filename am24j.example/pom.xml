@@ -2,22 +2,18 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>am24j</groupId>
+  <parent>
+    <groupId>am24j</groupId>
+    <artifactId>am24j.root</artifactId>
+    <version>${revision}</version>
+  </parent>
+  
   <artifactId>am24j.example</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
   
   <build>
     <finalName>example</finalName>
-    <plugins>
-      <plugin>    
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>8</source>
-          <target>8</target>
-        </configuration>
-      </plugin>
-      
+    <plugins>      
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
@@ -51,20 +47,12 @@
     <dependency>
       <groupId>am24j</groupId>
       <artifactId>am24j.runtime</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
-    </dependency>
-    
+      <version>${project.version}</version>
+    </dependency>    
     <dependency>
       <groupId>am24j</groupId>
       <artifactId>am24j.launcher</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
-    </dependency>
-    
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.13.1</version>
-      <scope>test</scope>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 </project>

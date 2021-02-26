@@ -3,9 +3,78 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>am24j</groupId>
-  <artifactId>am24j.modules</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <artifactId>am24j.root</artifactId>
+  <version>${revision}</version>
   <packaging>pom</packaging>
+  
+  <properties>
+    <revision>0-SNAPSHOT</revision>
+    
+    <compiler.plugin.version>3.8.1</compiler.plugin.version>
+    <flatten.plugin.version>1.2.5</flatten.plugin.version>
+    
+    <slf4j.version>1.7.30</slf4j.version>
+    <log4j2.version>2.14.0</log4j2.version>
+    
+    <javax.inject.version>1</javax.inject.version>
+    <jackson.version>2.11.3</jackson.version>
+    <avro.version>1.10.1</avro.version>
+    <vertx.version>4.0.0</vertx.version>
+    <resteasy.version>4.6.0.Final</resteasy.version>
+    
+    <junit.version>4.13.1</junit.version>
+
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  
+  <build>
+    <plugins>
+      <plugin>    
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${compiler.plugin.version}</version>
+        <configuration>
+          <source>8</source>
+          <target>8</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+        <version>${flatten.plugin.version}</version>
+        <configuration>
+        </configuration>
+        <executions>
+          <execution>
+            <id>flatten</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>flatten</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  
+  <dependencies>
+    <dependency>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
+      <version>${javax.inject.version}</version>
+    </dependency>    
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>    
+    
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
   
   <modules>
     <!-- libs -->

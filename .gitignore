@@ -1,4 +1,5 @@
 *.iml
+.flattened-pom.xml
 .idea
 .settings
 .classpath
