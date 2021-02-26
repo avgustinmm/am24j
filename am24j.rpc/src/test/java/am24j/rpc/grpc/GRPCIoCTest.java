@@ -15,28 +15,22 @@
  */
 package am24j.rpc.grpc;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-
 import org.apache.logging.log4j.Level;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Test;
 
 import am24j.commons.Log4j2Config;
 import am24j.inject.Injector.Key;
-import am24j.rpc.AuthVerfier;
-import am24j.rpc.Ctx;
+import am24j.rpc.BaseTest;
 import am24j.rpc.IService;
 import am24j.rpc.ServiceImpl;
+import am24j.rpc.grpc.GRPCTest.TestAuthVerfier;
 import am24j.rt.Starter;
 import am24j.rt.config.Config;
 import am24j.vertx.Instance;
 import am24j.vertx.NoCluster;
-import io.grpc.Metadata;
 
-public class GRPCIoCTest {
+public class GRPCIoCTest extends BaseTest {
 
   static {
     Log4j2Config.setUp(Level.INFO, Level.TRACE, "am24j.rpc.grpc");
@@ -44,9 +38,7 @@ public class GRPCIoCTest {
 
   private static Starter sStarter;
   private static Starter cStarter;
-  
-  private static IService service;
-  
+
   @BeforeClass
   public static void before() {
     sStarter = Starter.start(
@@ -77,18 +69,5 @@ public class GRPCIoCTest {
   public static void after() throws Exception {
     cStarter.close();
     sStarter.close();
-  }
-  
-  @Test
-  public void testVoidCall() {
-    Assert.assertEquals(service.voidCall().toCompletableFuture().join(), null);
-  }
-  
-  public static class TestAuthVerfier implements AuthVerfier<Metadata> {
-
-    @Override
-    public CompletionStage<Ctx> ctx(final Metadata auth) { // add real check
-      return CompletableFuture.completedStage(Ctx.NULL);
-    }
   }
 }

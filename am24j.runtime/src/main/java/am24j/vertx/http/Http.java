@@ -18,6 +18,7 @@ package am24j.vertx.http;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 import org.slf4j.Logger;
@@ -44,7 +45,7 @@ public class Http extends Component<Verticle> {
   private static final Logger LOG = Ctx.logger("HTTP");
   
   @Inject
-  public Http(final List<HttpHandler> handlers, final DeploymentOptions options, final Vertx vertx) {
+  public Http(final List<HttpHandler> handlers, @Named("http_server.json") final DeploymentOptions options, final Vertx vertx) {
     super(new AbstractVerticle() {
       
       private HttpServer server;

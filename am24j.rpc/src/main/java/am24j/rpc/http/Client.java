@@ -16,11 +16,17 @@
 package am24j.rpc.http;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
 import java.util.function.Supplier;
 
 import javax.inject.Inject;
@@ -33,7 +39,9 @@ import org.slf4j.LoggerFactory;
 
 import am24j.rpc.avro.Proto;
 import am24j.rpc.avro.RPCException;
+import am24j.vertx.VertxUtils;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
@@ -51,9 +59,12 @@ public class Client implements AutoCloseable {
   private final boolean json;
   private final HttpClient client;
   
+  private final Vertx vertx;
+  
   @Inject
   public Client(@Named("http_client.json") final JsonObject options, final Vertx vertx) {
     LOG.info("Start (options: {})", options);
+    this.vertx = vertx;
     json = options.getBoolean("json", true);
     client = vertx.createHttpClient(new HttpClientOptions(options));
   }
@@ -91,11 +102,15 @@ public class Client implements AutoCloseable {
                 .send(buff);
             })
             .compose(response -> {
-              response.body().map(buff ->  {
-                System.out.println(buff);
-                return null;
+              final StreamHandler streamHandler = new StreamHandler(aMessage, json, response, subscriber, VertxUtils.ctxExecutor(vertx));
+              subscriber.onSubscribe(streamHandler);
+              response.handler(streamHandler).end(ar -> {
+                if (ar.succeeded()) {
+                  subscriber.onComplete();
+                } else {
+                  subscriber.onError(ar.cause());
+                }
               });
-              // TODO - read stream on chunks and push them on subscriber (backpressure?)
               return Future.succeededFuture();
             })
             .recover(t -> {
@@ -136,5 +151,98 @@ public class Client implements AutoCloseable {
         return result;
       }
     });
+  }
+      
+  private static class StreamHandler extends InputStream implements Handler<Buffer>, Subscription {
+
+    private final Message aMessage;
+    private final boolean json;
+    private final HttpClientResponse response;
+    private final Subscriber<Object> subscriber;
+    private final Executor vExecutor;
+    
+    private final List<Buffer> buffers = new LinkedList<>();
+    private int bufPos;
+    private int pos;
+    
+    private long requested;
+    
+    private StreamHandler(final Message aMessage, final boolean json, final HttpClientResponse response, final Subscriber<Object> subscriber, final Executor vExecutor) {
+      this.aMessage = aMessage;
+      this.json = json;
+      this.response = response;
+      this.subscriber = subscriber;
+      this.vExecutor = vExecutor;
+      response.pause();
+    }
+    
+    @Override
+    public void handle(final Buffer buff) {
+      buffers.add(buff);
+      if (requested <= 0) {
+        response.pause();
+        return; // no requested
+      }
+      while (!buffers.isEmpty()) {
+        final int bufPos = this.bufPos;
+        final int pos = this.pos;
+        try {
+          final Object decoded = Proto.decodeResp(aMessage.getResponse(), aMessage.getErrors(), this, json);
+          if (decoded instanceof RPCException) {
+            subscriber.onError(((RPCException)decoded).toRPC());
+          } else {
+            subscriber.onNext(decoded);
+          }
+          if (requested <= 0) {
+            response.pause();
+          }
+          if (this.bufPos > 0) { // remove read
+            for (int i = 0; i < this.bufPos; i++) {
+              buffers.remove(0);
+            }
+            this.bufPos = 0;
+          }
+        } catch (final Exception e) {
+          // incomplete record, return mark back
+          this.bufPos = bufPos;
+          this.pos = pos;
+          return;
+        }
+      }
+    }
+
+    @Override
+    public int read() throws IOException {
+      if (bufPos < buffers.size()) {
+        final Buffer buff = buffers.get(bufPos);
+        if (pos == buff.length()) {
+          bufPos++;
+          pos = 0;
+          return read();
+        }
+        return buff.getByte(pos++);
+      } else {
+        return -1;
+      }
+    }
+
+    @Override
+    public void request(final long n) {
+      vExecutor.execute(() -> {
+        if (n < 0) throw new IllegalArgumentException("Request must be non-negative! Found: " + n + "!");
+        if (n > 0) {
+          final long newRquested = requested + n;
+          requested = newRquested > requested ? newRquested : Long.MAX_VALUE; // if less, overflow
+          if (requested > 0) {
+            response.resume();
+          }
+        }
+      });
+    }
+    
+    @Override
+    public void cancel() {
+      vExecutor.execute(response::end);
+    }
   }
 }

@@ -17,26 +17,24 @@ package am24j.rpc.http;
 
 import org.apache.logging.log4j.Level;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import am24j.commons.Log4j2Config;
 import am24j.inject.Injector.Key;
+import am24j.rpc.BaseTest;
 import am24j.rpc.IService;
 import am24j.rpc.ServiceImpl;
-import am24j.rpc.http.HTTPTest.TestAuthVerfier;
+import am24j.rpc.http.HttpTest.TestAuthVerfier;
 import am24j.rt.Starter;
 import am24j.rt.config.Config;
 import am24j.vertx.Instance;
 import am24j.vertx.NoCluster;
+import am24j.vertx.http.Http;
 
 /**
  * @author avgustinmm
  */
-@Ignore
-public class HttpIoCTest {
+public class HttpIoCTest extends BaseTest {
 
   static {
     Log4j2Config.setUp(Level.INFO, Level.TRACE, "am24j.rcp.http");
@@ -44,9 +42,7 @@ public class HttpIoCTest {
   
   private static Starter sStarter;
   private static Starter cStarter;
-  
-  private static IService service;
-  
+    
   @BeforeClass
   public static void before() {
     sStarter = Starter.start(
@@ -54,12 +50,13 @@ public class HttpIoCTest {
       // vertx
       NoCluster.class,      
       Instance.class,
-      // wite verfiers
-      TestAuthVerfier.class,
       // service
       ServiceImpl.class,
-      // gRPC server - wheb services are registered
-      Server.class);
+      // with verfiers
+      TestAuthVerfier.class,
+      // Http rpc server - wheb services are registered
+      Server.class, 
+      Http.class);
     cStarter = Starter.start(
       Config.class,   
       // vertx
@@ -77,10 +74,5 @@ public class HttpIoCTest {
   public static void after() throws Exception {
     cStarter.close();
     sStarter.close();
-  }
-  
-  @Test
-  public void testVoidCall() {
-    Assert.assertEquals(service.voidCall().toCompletableFuture().join(), null);
   }
 }

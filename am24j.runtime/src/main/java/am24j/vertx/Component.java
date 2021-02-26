@@ -28,6 +28,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 
+// TODO - this way if self-deployable verticles doesn't support multiple instances
 /**
  * @author avgustinmm
  */
