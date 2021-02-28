@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -35,8 +35,8 @@ import javax.inject.Named;
 import org.apache.avro.Protocol;
 import org.apache.avro.Protocol.Message;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import am24j.commons.Ctx;
 import am24j.rpc.avro.Proto;
 import am24j.rpc.avro.RPCException;
 import am24j.vertx.VertxUtils;
@@ -50,17 +50,22 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 
-// single threads, mainly for test purposes 
+/**
+ * HTTP RPC client. Single threaded.
+ *
+ * @author avgustinmm
+ */
 public class Client implements AutoCloseable {
 
-  // TODO get it via runtime ctx (?) (inject it ?)
-  private static final Logger LOG = LoggerFactory.getLogger("am24j.rpc.http.client");
-  
+  private static final Logger LOG = Ctx.logger("rpc.http.client");
+
+  private static final String HTTP_RPC_ROOT = Ctx.prop("rpc.http.root", "/rpc");
+
   private final boolean json;
   private final HttpClient client;
-  
+
   private final Vertx vertx;
-  
+
   @Inject
   public Client(@Named("http_client.json") final JsonObject options, final Vertx vertx) {
     LOG.info("Start (options: {})", options);
@@ -68,25 +73,25 @@ public class Client implements AutoCloseable {
     json = options.getBoolean("json", true);
     client = vertx.createHttpClient(new HttpClientOptions(options));
   }
-  
+
   @Override
   public void close() {
     client.close();
   }
-  
+
   @SuppressWarnings("unchecked")
   public <T> T service(final Supplier<String> credentialSupplier, final Class<T> clazz, final Class<?>... others) {
     final Class<?>[] interfaces = new Class<?>[1 + others.length];
     System.arraycopy(others, 0, interfaces, 0, others.length);
     interfaces[others.length] = clazz;
     return (T)Proxy.newProxyInstance(clazz.getClassLoader(), interfaces, new InvocationHandler() {
-      
+
       @Override
       public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
         final Class<?> iClass = method.getDeclaringClass();
         final Protocol aProto = Proto.protocol(iClass);
         final Message aMessage = aProto.getMessages().get(Proto.methodName(method));
-        final String path = "/rpc" + '/' + aProto.getName() + '/' + aMessage.getName();
+        final String path = HTTP_RPC_ROOT + '/' + aProto.getName() + '/' + aMessage.getName();
         final Object result;
         if (Proto.isStream(method)) {
           final Object[] realArgs = new Object[args.length - 1];
@@ -152,7 +157,7 @@ public class Client implements AutoCloseable {
       }
     });
   }
-      
+
   private static class StreamHandler extends InputStream implements Handler<Buffer>, Subscription {
 
     private final Message aMessage;
@@ -160,13 +165,13 @@ public class Client implements AutoCloseable {
     private final HttpClientResponse response;
     private final Subscriber<Object> subscriber;
     private final Executor vExecutor;
-    
+
     private final List<Buffer> buffers = new LinkedList<>();
     private int bufPos;
     private int pos;
-    
+
     private long requested;
-    
+
     private StreamHandler(final Message aMessage, final boolean json, final HttpClientResponse response, final Subscriber<Object> subscriber, final Executor vExecutor) {
       this.aMessage = aMessage;
       this.json = json;
@@ -175,7 +180,7 @@ public class Client implements AutoCloseable {
       this.vExecutor = vExecutor;
       response.pause();
     }
-    
+
     @Override
     public void handle(final Buffer buff) {
       buffers.add(buff);
@@ -239,7 +244,7 @@ public class Client implements AutoCloseable {
         }
       });
     }
-    
+
     @Override
     public void cancel() {
       vExecutor.execute(response::end);

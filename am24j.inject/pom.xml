@@ -11,6 +11,9 @@
   <artifactId>am24j.inject</artifactId>
   <packaging>jar</packaging>
 
+  <name>Injector</name>
+  <description>Simple but powerful injector. Supprots pluggable respovers and iterceptors.</description>
+  
   <dependencies>
     <dependency> <!-- Needed for json configuration of log4j -->
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -36,6 +39,12 @@
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j-impl</artifactId>
       <version>${log4j2.version}</version>
-    </dependency>    
+    </dependency>
+    
+    <dependency>
+      <groupId>am24j</groupId>
+      <artifactId>am24j.commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 </project>

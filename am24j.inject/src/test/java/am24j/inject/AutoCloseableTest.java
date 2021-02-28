@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,6 +31,8 @@ import am24j.inject.Interceptors.AutoCloseableHandler;
 import am24j.inject.annotation.Provides;
 
 /**
+ * Aoto closables tests
+ *
  * @author avgustinmm
  */
 public class AutoCloseableTest {
@@ -74,30 +76,30 @@ public class AutoCloseableTest {
       return () -> ac2;
     }
   }
-  
+
   public static class Automatic implements AutoCloseable {
     @Override
     public void close() {}
   }
-  
+
   public static class User {
-    
+
     @Inject
     User(final Automatic a) {}
   }
-  
-  
+
+
   @Test
   public void test() {
     final AutoCloseableHandler ach = Interceptors.autoCloseableHandler();
     final Injector injector = Injector.newInstance().add(Resolvers.multi(true)).add(Interceptors.providesBinder()).add(ach);
-    
+
     injector.getInstance(Key.of(Comp1.class));
     Assert.assertEquals("One added!", 1, size(ach));
-    
+
     injector.getInstance(Key.of(Comp2.class));
     Assert.assertEquals("Second added!", 2, size(ach));
-    
+
     final Comp3 comp3 = injector.getInstance(Key.of(Comp3.class));
     Assert.assertEquals("Provider don't add!", 2, size(ach));
     injector.<Comp3>getInstance(Key.of(Comp3.class)).get();
@@ -110,20 +112,20 @@ public class AutoCloseableTest {
     injector.<Comp4>getInstance(Key.of(Comp4.class)).get();
     Assert.assertEquals("Direct get - don't add", 3, size(ach));
     injector.getInstance(Key.of(AutoCloseable.class));
-    Assert.assertEquals("Via provider (provides) explicit get - dd", 4, size(ach));    
+    Assert.assertEquals("Via provider (provides) explicit get - dd", 4, size(ach));
     injector.getInstance(Key.of(Comp4.class));
     injector.<Comp4>getInstance(Key.of(Comp4.class)).getP().get();
     Assert.assertEquals("Direct get - don't add", 4, size(ach));
     injector.getInstance(Key.of(AutoCloseable.class, TestUtils.namedX()));
     Assert.assertEquals("Via provider (provides) explicit get - add", 5, size(ach));
-    
+
     injector.getInstance(Key.of(Automatic.class));
     Assert.assertEquals("Automaiic constr -add ", 6, size(ach));
-    
+
     injector.getInstance(Key.of(Automatic.class));
     Assert.assertEquals("Automaiic indirect -add ", 7, size(ach));
   }
-  
+
   @SuppressWarnings("unchecked")
   private static int size(final AutoCloseableHandler ach) {
     try {

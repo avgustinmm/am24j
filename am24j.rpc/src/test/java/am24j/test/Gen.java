@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,6 +23,8 @@ import am24j.commons.Reflect;
 import io.netty.util.internal.ThreadLocalRandom;
 
 /**
+ * Generates random strings, using an alphaber
+ *
  * @author avgustinmm
  */
 public class Gen {
@@ -38,7 +40,7 @@ public class Gen {
     }
     DEFAULT_ALPHABER = sb.toString().toCharArray();
   }
-  
+
   private Gen() {}
 
   public static Object[] gen(final Type... types) {
@@ -51,7 +53,7 @@ public class Gen {
     for (int i = array.length; i-- > 0; array[i] = gen(classes[i]));
     return array;
   }
-  
+
   @SuppressWarnings("unchecked")
   public static <T> T gen(final Class<T> clazz) {
     if (clazz == null) {

@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,10 +19,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
-
 import java.util.concurrent.Semaphore;
 
 /**
+ * Test remote object.<br>
+ *
  * TODO - extends test and use-cases:
  * <ul>
  *   <li>checking authentication / context (invoke calls, sub</li>
@@ -33,7 +34,7 @@ import java.util.concurrent.Semaphore;
  *   <li>checking that response is in the same thread</li>
  *   <li>...</li>
  * </ul>
- * 
+ *
  * @author avgustinmm
  */
 @Remote
@@ -64,7 +65,7 @@ public class ServiceImpl implements IService {
   public void stream(final int i, final Subscriber<String> subscriber) {
     final Semaphore semaphore = new Semaphore(i);
     subscriber.onSubscribe(new Subscription() {
-      
+
       @Override
       public void request(final long n) {
         for (int j = 0; j < n; j++) {
@@ -75,10 +76,10 @@ public class ServiceImpl implements IService {
           }
         }
       }
-      
+
       @Override
       public void cancel() {
-        
+
       }
     });
   }

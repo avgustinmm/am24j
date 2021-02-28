@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,10 +28,12 @@ import org.junit.Test;
 import am24j.inject.Injector.Key;
 
 /**
+ * Test bindings
+ *
  * @author avgustinmm
  */
 public class BindingTest {
-    
+
   @Test
   public void getInstanceObj() {
     final Injector injector = Injector.newInstance();
@@ -39,7 +41,7 @@ public class BindingTest {
     final Object obj = injector.getInstance(Key.of(Object.class));
     Assert.assertTrue("Expected type", obj instanceof Object);
   }
-  
+
   @Test
   public void getInstanceEmptyConstr() {
     final Injector injector = Injector.newInstance();
@@ -55,14 +57,14 @@ public class BindingTest {
     injector.bind(Key.of(Object.class), obj);
     Assert.assertTrue("Equals first", obj == injector.getInstance(Key.of(Object.class)));
     Assert.assertTrue("Equals secind", obj == injector.getInstance(Key.of(Object.class)));
-    
+
     // rebind
     final Object obj2 = new Object();
     injector.bind(Key.of(Object.class), obj2);
     Assert.assertTrue("Equals first (rebind)", obj2 == injector.getInstance(Key.of(Object.class)));
     Assert.assertTrue("Equals secind (rebind)", obj2 == injector.getInstance(Key.of(Object.class)));
   }
-  
+
   @Test
   public void bindClass() {
     final Injector injector = Injector.newInstance();
@@ -72,7 +74,7 @@ public class BindingTest {
     final List<Object> l2 = injector.getInstance(Key.of(Object.class));
     Assert.assertTrue("ArrayList second", l2 instanceof ArrayList);
     Assert.assertFalse("Not equal", l == l2);
-    
+
     // rebind
     injector.bind(Key.of(Object.class), HashSet.class);
     final Set<Object> s = injector.getInstance(Key.of(Object.class));
@@ -81,7 +83,7 @@ public class BindingTest {
     Assert.assertTrue("ArrayList second (rebind)", s2 instanceof HashSet);
     Assert.assertFalse("Not equal", s == s2);
   }
-  
+
   @Test
   public void bindProvider() {
     final Injector injector = Injector.newInstance();
@@ -89,7 +91,7 @@ public class BindingTest {
     injector.bind(Key.of(Object.class), () -> obj);
     Assert.assertTrue("Equals first", obj == injector.getInstance(Key.of(Object.class)));
     Assert.assertTrue("Equals secind", obj == injector.getInstance(Key.of(Object.class)));
-    
+
     // rebind
     final Object obj2 = new Object();
     injector.bind(Key.of(Object.class), () -> obj2);
@@ -104,7 +106,7 @@ public class BindingTest {
     Assert.assertFalse("Not Equals second (rebind)", obj2 == obj4);
     Assert.assertFalse("Not Equals third (rebind)", obj3 == obj4);
   }
-  
+
   @Test
   public void multiObject() {
     final Injector injector = Injector.newInstance();
@@ -113,9 +115,9 @@ public class BindingTest {
     final Object o2 = injector.getInstance(Key.of(Object.class));
     Assert.assertFalse("Not equal", o == o2);
   }
-  
+
   @Singleton
-  public static class SingletonObj {}  
+  public static class SingletonObj {}
   @Test
   public void singletonObject() {
     final Injector injector = Injector.newInstance();

@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,12 +23,17 @@ import org.junit.Test;
 
 import am24j.rpc.IService;
 
+/**
+ * Avro encoding tests
+ *
+ * @author avgustinmm
+ */
 public class EncodingTest {
 
   private static final Message MESSAGE;
   static {
     try {
-      MESSAGE = 
+      MESSAGE =
         Proto.protocol(IService.class)
           .getMessages()
           .get(Proto.methodName(IService.class.getMethod("getCall", int.class, String.class)));
@@ -36,44 +41,44 @@ public class EncodingTest {
       throw new IllegalStateException(e);
     }
   }
-  
+
   @Test
-  public void testBinReq() throws Exception {   
+  public void testBinReq() throws Exception {
     testReq(false);
   }
-  
+
   @Test
-  public void testJsonReq() throws Exception {   
+  public void testJsonReq() throws Exception {
     testReq(true);
   }
-  
+
   @Test
-  public void testBinResp() throws Exception {   
+  public void testBinResp() throws Exception {
     testResp(false);
   }
-  
+
   @Test
-  public void testJsonResp() throws Exception {   
+  public void testJsonResp() throws Exception {
     testResp(true);
   }
-  
+
   @Test
-  public void testJsonErrResp() throws Exception {   
+  public void testJsonErrResp() throws Exception {
     final RPCException exc = new RPCException().setUUID("uuid").setMessage("meg").setType("AType");
     final byte[] encoded = Proto.encodeResp(MESSAGE.getResponse(), MESSAGE.getErrors(), exc, true);
     final Object decoded = Proto.decodeResp(MESSAGE.getResponse(), MESSAGE.getErrors(), new ByteArrayInputStream(encoded), true);
     Assert.assertEquals("Encode / decode - correct typey", RPCException.class, decoded.getClass());
     Assert.assertEquals("Encode / decode - identity", exc.toString(), decoded.toString());
   }
-  
-  private void testReq(final boolean json) throws Exception {    
+
+  private void testReq(final boolean json) throws Exception {
     final Object[] args = new Object[] {5, "test"};
     final byte[] encoded = Proto.encodeReqy(MESSAGE.getRequest(), args, json);
     final Object[] decoded = Proto.decodeReq(MESSAGE.getRequest(), new ByteArrayInputStream(encoded), json);
     Assert.assertArrayEquals("Encode / decode - identity", args, decoded);
   }
-  
-  private void testResp(final boolean json) throws Exception {    
+
+  private void testResp(final boolean json) throws Exception {
     final Object resp = "test";
     final byte[] encoded = Proto.encodeResp(MESSAGE.getResponse(), MESSAGE.getErrors(), resp, json);
     final Object decoded = Proto.decodeResp(MESSAGE.getResponse(), MESSAGE.getErrors(), new ByteArrayInputStream(encoded), json);

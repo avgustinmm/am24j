@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,8 +26,8 @@ import org.junit.BeforeClass;
 import am24j.commons.Log4j2Config;
 import am24j.rpc.AuthVerfier;
 import am24j.rpc.BaseTest;
-import am24j.rpc.Ctx;
 import am24j.rpc.IService;
+import am24j.rpc.RPCCtx;
 import am24j.rpc.ServiceImpl;
 import am24j.rpc.grpc.ServerVerticle;
 import am24j.vertx.http.Http;
@@ -44,37 +44,37 @@ public class HttpTest extends BaseTest {
   static {
     Log4j2Config.setUp(Level.INFO, Level.TRACE, "am24j.rpc.http");
   }
-  
+
   private static Vertx sVertx;
   private static Vertx cVertx;
-  
+
   private static Server server;
   private static Client client;
   private static Http http;
-  
+
   @BeforeClass
   public static void before() {
     sVertx = Vertx.vertx();
     cVertx = Vertx.vertx();
-    
+
     server = new Server(
       Collections.singletonList(new ServiceImpl()),
       Collections.singletonList(new TestAuthVerfier()),
       sVertx);
-    client = new Client( 
+    client = new Client(
       new JsonObject()
         .put("ssl", false)
         .put("defaultHost", "localhost")
         .put("defaultPort", 1081),
       cVertx);
     service = client.service(() -> "user:pass", IService.class);
-    http = 
+    http =
       new Http(
-        Collections.<Http.HttpHandler>singletonList(server), 
+        Collections.<Http.HttpHandler>singletonList(server),
         new DeploymentOptions().setConfig(
           new JsonObject()
             .put(ServerVerticle.HOST, "localhost")
-            .put(ServerVerticle.PORT, 1081)), 
+            .put(ServerVerticle.PORT, 1081)),
         sVertx);
     try {
       Thread.sleep(2_000);
@@ -82,7 +82,7 @@ public class HttpTest extends BaseTest {
       e.printStackTrace();
     }
   }
-  
+
   @AfterClass
   public static void after() {
     client.close();
@@ -94,8 +94,8 @@ public class HttpTest extends BaseTest {
   public static class TestAuthVerfier implements AuthVerfier<HttpServerRequest> {
 
     @Override
-    public CompletionStage<Ctx> ctx(final HttpServerRequest request) { // add real check
-      return CompletableFuture.completedStage(Ctx.NULL);
+    public CompletionStage<RPCCtx> ctx(final HttpServerRequest request) { // add real check
+      return CompletableFuture.completedStage(RPCCtx.NULL);
     }
   }
 }

@@ -10,6 +10,9 @@
   
   <artifactId>am24j.avro</artifactId>
   <packaging>jar</packaging>
+  
+  <name>Avro Encoding</name>
+  <description>Bean utilites and Avro encoding</description>
 
   <dependencies>
     <dependency>

@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,6 +24,8 @@ import java.util.Comparator;
 import java.util.stream.Stream;
 
 /**
+ * Reflect utilities
+ *
  * @author avgustinmm
  */
 public class Reflect {
@@ -37,7 +39,7 @@ public class Reflect {
   };
 
   private Reflect() {}
-  
+
   @SuppressWarnings("unchecked")
   public static <T> T call(final Object obj, final Method method, final Object... args) {
     if (!method.canAccess(obj)) {
@@ -47,20 +49,20 @@ public class Reflect {
       return (T)method.invoke(obj, args);
     } catch (final InvocationTargetException e) {
       final Throwable cause = e.getCause() == null ? e : e.getCause();
-      throw RE.toRuntime(cause);
+      throw RExc.toRuntime(cause);
     } catch (final Exception e) {
-      throw RE.toRuntime(e);
+      throw RExc.toRuntime(e);
     }
   }
-  
+
   public static Method method(final Class<?> clazz, final String name, final Class<?>... parameterTypes) {
     try {
       return clazz.getDeclaredMethod(name, parameterTypes);
     } catch (final Exception e) {
-      throw RE.toRuntime(e);
+      throw RExc.toRuntime(e);
     }
   }
-  
+
   public static String methodSig(final Method method) {
     final StringBuilder sb = new StringBuilder(method.getName());
     sb.append('(');
@@ -74,7 +76,7 @@ public class Reflect {
     sb.append(')'); // no return type - it might differ when extended
     return sb.toString();
   }
-  
+
   public static Stream<Method> findByName(final Class<?> clazz, final String methodName) {
     return Arrays.stream(clazz.getDeclaredMethods()).filter(method -> methodName.equals(method.getName()));
   }

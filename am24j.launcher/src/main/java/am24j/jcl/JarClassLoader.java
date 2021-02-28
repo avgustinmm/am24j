@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -35,7 +35,7 @@ import java.util.stream.Stream;
 
 /**
  * lass loader that provides class kept in internal jars
- * 
+ *
  * @author avgustinmm
  */
 public class JarClassLoader extends URLClassLoader {
@@ -44,13 +44,13 @@ public class JarClassLoader extends URLClassLoader {
   private static final String INTERNAL_JAR_PROTOCOL = "ijar";
 
   static {
-    // since jar url handler doesn't support internal jars we fake it - 
+    // since jar url handler doesn't support internal jars we fake it -
     // wrap it in ijar (internal jar) protocol hander and thus
-    // ijar provides access to internal jar (as regular url handler) 
+    // ijar provides access to internal jar (as regular url handler)
     // while jar provides access to the internals of that internal jar (when used by URLClassLoader) ..
-    // url is similar to jar's but * (unexpected symbol) is used as replacement of ! from the jar url 
+    // url is similar to jar's but * (unexpected symbol) is used as replacement of ! from the jar url
     URL.setURLStreamHandlerFactory(new URLStreamHandlerFactory() {
-      
+
       private final URLStreamHandler handler = new URLStreamHandler() {
 
         @Override
@@ -58,7 +58,7 @@ public class JarClassLoader extends URLClassLoader {
           return new URL(u.toString().substring(1).replace("*/", "!/")).openConnection();
         }
       };
-    
+
       @Override
       public URLStreamHandler createURLStreamHandler(final String protocol) {
         if (INTERNAL_JAR_PROTOCOL.equals(protocol)) {
@@ -68,24 +68,24 @@ public class JarClassLoader extends URLClassLoader {
       }
     });
   }
- 
+
   public JarClassLoader(final ClassLoader parent) {
     super(urls(), parent);
   }
 
   private final ConcurrentHashMap<URL, ConcurrentHashMap<String, Boolean>> usage = new ConcurrentHashMap<>();
-  
+
   @Override
   protected Package definePackage(final String name, final Manifest man, final URL url) throws IllegalArgumentException {
     usage.computeIfAbsent(url, u -> new ConcurrentHashMap<>()).put(name, Boolean.TRUE);
     return super.definePackage(name, man, url);
   }
-  
+
   @Override
   public String toString() {
     final URL[] urls = getURLs();
     final StringBuilder sb = new StringBuilder();
-    
+
     final List<String> used = new ArrayList<>();
     final List<String> unused = new ArrayList<>();
     for (final URL url : urls) {

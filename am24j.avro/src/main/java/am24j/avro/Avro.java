@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -43,38 +43,43 @@ import org.apache.avro.io.EncoderFactory;
 import am24j.bean.Bean;
 import am24j.bean.Bean.Property;
 
+/**
+ * Provides avro encodings
+ *
+ * @author avgustinmm
+ */
 public class Avro {
-  
+
   public static enum Encoding {
     Json,
     Binary;
   }
 
   public static Schema forClaxx(final Class<?> clazz) {
-    return forType((Type)clazz);
+    return forType(clazz);
   }
-  
+
   private static final Map<Type, Schema> SCHEMAS = new HashMap<>();
   public static synchronized Schema forType(final Type type) {
     return forType(type, new Stack<Type>());
   }
-  
+
   public static Schema forTypeNullable(final Class<?> clazz) {
     return forTypeNullable((Type)clazz);
   }
-  
+
   private static final Map<Type, Schema> SCHEMAS_NULLABLE = new HashMap<>();
   public static Schema forTypeNullable(final Type type) {
     return SCHEMAS_NULLABLE.computeIfAbsent(type,  t -> SchemaBuilder.nullable().type(forType(type)));
   }
-  
+
   public static byte[] write(final Object obj, final Encoding encoding) throws IOException {
     return write(obj, obj.getClass(), encoding);
   }
-  
+
   public static byte[] write(final Object obj, final Type type, final Encoding encoding) throws IOException {
     final Schema schema = forType(type);
-    final Bean<Object> bean = Bean.forType(type); 
+    final Bean<Object> bean = Bean.forType(type);
     final GenericRecord record = new GenericData.Record(schema);
     final Property[] props = bean.properties();
     final Object[] values = bean.values(obj);
@@ -89,7 +94,7 @@ public class Avro {
       return baos.toByteArray();
     }
   }
-  
+
   public static <T> T read(final byte[] ba, final Type type, final Encoding encoding) throws IOException {
     final Schema schema = forType(type);
     GenericRecord record = new GenericData.Record(schema);
@@ -98,33 +103,29 @@ public class Avro {
       final DatumReader<GenericRecord> reader = new GenericDatumReader<>(schema);
       record = reader.read(record, decoder);
     }
-    
-    final Bean<T> bean = Bean.forType(type); 
+
+    final Bean<T> bean = Bean.forType(type);
     final Property[] props = bean.properties();
     final Object[] values = new Object[props.length];
     for (int i = 0; i < props.length; i++) {
       values[i] = record.get(props[i].name());
-   // if default string is set - it is decoded as Utf8, but with "avro.java.string", "String - seem ok
-//      if (values[i] instanceof Utf8) { 
-//        values[i] = values[i].toString();
-//      }
     }
     return bean.build(values);
   }
-  
+
   private static synchronized Schema forType(final Type type, final Stack<Type> stack) {
     Schema schema = SCHEMAS.get(type);
     if (schema == null) {
       stack.push(type);
-      schema = build(type, stack);   
+      schema = build(type, stack);
       SCHEMAS.put(type, schema);
       stack.pop();
     }
     return schema;
   }
-  
-  private static Schema build(final Type type, final Stack<Type> stack) { 
-    final Class<?> clazz = clazz(type); 
+
+  private static Schema build(final Type type, final Stack<Type> stack) {
+    final Class<?> clazz = clazz(type);
     if (clazz == boolean.class || clazz == Integer.class) {
       return SchemaBuilder.builder().booleanType();
     } else if (
@@ -167,8 +168,8 @@ public class Avro {
           fAssembler
             .name(prop.name())
             .type(
-              prop.nullable() ? 
-                SchemaBuilder.nullable().type(forType(propType, stack)) : 
+              prop.nullable() ?
+                SchemaBuilder.nullable().type(forType(propType, stack)) :
                 forType(propType, stack))
             .noDefault();
         }
@@ -195,7 +196,7 @@ public class Avro {
       throw new IllegalArgumentException("Cab't resoove class from type " + type + "!");
     }
   }
-  
+
   // normalize string to match avro requirements (if needed)
   public static String norm(final String str) { // TODO
     return str.replace('$', '_').replace('/', '_');

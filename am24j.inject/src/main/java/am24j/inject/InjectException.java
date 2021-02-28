@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,6 +16,8 @@
 package am24j.inject;
 
 /**
+ * Injext exception
+ *
  * @author avgustinmm
  */
 public class InjectException extends RuntimeException {
@@ -25,15 +27,15 @@ public class InjectException extends RuntimeException {
   private InjectException(final String msg, final Throwable cause) {
     super(msg, cause);
   }
-  
+
   public static InjectException of(final String msg) {
     return of(msg, null);
   }
-  
+
   public static InjectException of(final Throwable t) {
     return of(null, t);
   }
-  
+
   private static InjectException of(final String msg, final Throwable cause) {
     if (cause instanceof InjectException) {
       if (msg == null) {

@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,10 +25,15 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+/**
+ * ASync utilities
+ *
+ * @author avgustinmm
+ */
 public class ASync {
 
   private static final Timer TIMER = new Timer();
-  
+
   public static <T> CompletionStage<T> handler(final CompletionStage<T> stage, final CompletableFuture<T> hamdler) {
     stage.whenComplete((r, e) -> {
       if (e == null) {
@@ -39,12 +44,12 @@ public class ASync {
     });
     return hamdler;
   }
-  
+
   public static <T> CompletionStage<T> timeout(final CompletionStage<T> future, final long timeoutMS) {
     final CompletableFuture<T> tFuture = new CompletableFuture<>();
     final AtomicBoolean finished = new AtomicBoolean(false);
     TIMER.schedule(new TimerTask() {
-      
+
       @Override
       public void run() {
         if (finished.compareAndSet(false, true)) {
@@ -62,7 +67,7 @@ public class ASync {
       }
     });
   }
-  
+
   public static CompletionStage<Void> sequentiallySkipErrors(final Iterator<CompletionStage<Void>> i) {
     return sequentially(Utils.map(i, cs -> cs.exceptionally(t -> null)));
   }
@@ -72,7 +77,7 @@ public class ASync {
     next(false, i, future);
     return future;
   }
-  
+
   public static <T> CompletionStage<T> sequentiallyGetSkipErrors(final Iterator<CompletionStage<T>> i) {
     return sequentiallyGet(Utils.map(i, cs -> cs.exceptionally(t -> null)));
   }
@@ -82,9 +87,9 @@ public class ASync {
     next(true,  i, future);
     return future;
   }
-  
+
   private static <T> void next(final boolean get, final Iterator<CompletionStage<T>> i, final CompletableFuture<T> future) {
-    if (i.hasNext()) {        
+    if (i.hasNext()) {
       i.next().whenCompleteAsync((r, e) -> { // asyn in order to prevent StackOverflowError if many are completed in same thread
         if (e == null) {
           if (get && r != null) {
@@ -100,16 +105,16 @@ public class ASync {
       future.complete(null);
     }
   }
-  
+
   public static class Lock {
-    
+
     private CompletionStage<Void> lokk = CompletableFuture.completedFuture(null);
-    
+
     public <T> CompletionStage<T> syncr(final Supplier<CompletionStage<T>> fn) {
       final CompletableFuture<T> future = new CompletableFuture<>();
       final AtomicBoolean in = new AtomicBoolean(true);
       synchronized (this) {
-        lokk = lokk.whenCompleteAsync((v, t) -> 
+        lokk = lokk.whenCompleteAsync((v, t) ->
           fn.get().whenComplete((r, e) -> {
             if (e == null) {
               future.complete(r);
@@ -122,7 +127,7 @@ public class ASync {
       return future;
     }
   }
-//  
+//
 //  public static void main(final String[] a) {
 //    final ForkJoinPool pool = ForkJoinPool.commonPool();
 //    pool.execute(() -> {

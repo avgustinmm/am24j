@@ -10,6 +10,8 @@
   
   <artifactId>am24j.commons</artifactId>
   <packaging>jar</packaging>
+  
+  <name>Commons</name>
 
   <dependencies>
     <dependency>

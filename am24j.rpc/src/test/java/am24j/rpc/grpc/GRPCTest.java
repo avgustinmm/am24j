@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,8 +26,8 @@ import org.junit.BeforeClass;
 import am24j.commons.Log4j2Config;
 import am24j.rpc.AuthVerfier;
 import am24j.rpc.BaseTest;
-import am24j.rpc.Ctx;
 import am24j.rpc.IService;
+import am24j.rpc.RPCCtx;
 import am24j.rpc.ServiceImpl;
 import io.grpc.Metadata;
 import io.vertx.core.DeploymentOptions;
@@ -42,27 +42,27 @@ public class GRPCTest extends BaseTest {
   static {
     Log4j2Config.setUp(Level.INFO, Level.TRACE, "am24j.rcp.grpc");
   }
-  
+
   private static Vertx sVertx;
   private static Vertx cVertx;
-  
+
   private static Server server;
   private static Client client;
-  
+
   @BeforeClass
   public static void before() {
     sVertx = Vertx.vertx();
     cVertx = Vertx.vertx();
-    
+
     server = new Server(
       Collections.singletonList(new ServiceImpl()),
       Collections.singletonList(new AuthVerfier<Metadata>() {
 
         @Override
-        public CompletionStage<Ctx> ctx(final Metadata auth) { // add real check
-          return CompletableFuture.completedStage(Ctx.NULL);
+        public CompletionStage<RPCCtx> ctx(final Metadata auth) { // add real check
+          return CompletableFuture.completedStage(RPCCtx.NULL);
         }
-      }), 
+      }),
       new DeploymentOptions()
         .setConfig(
           new JsonObject()
@@ -83,7 +83,7 @@ public class GRPCTest extends BaseTest {
       e.printStackTrace();
     }
   }
-  
+
   @AfterClass
   public static void after() {
     client.close();
@@ -91,12 +91,12 @@ public class GRPCTest extends BaseTest {
     server.close();
     sVertx.close();
   }
-  
+
   public static class TestAuthVerfier implements AuthVerfier<Metadata> {
 
     @Override
-    public CompletionStage<Ctx> ctx(final Metadata auth) { // add real check
-      return CompletableFuture.completedStage(Ctx.NULL);
+    public CompletionStage<RPCCtx> ctx(final Metadata auth) { // add real check
+      return CompletableFuture.completedStage(RPCCtx.NULL);
     }
   }
 }

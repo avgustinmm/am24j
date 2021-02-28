@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,7 +38,7 @@ import am24j.inject.annotation.Provides;
  * @author avgustinmm
  */
 public class MultiTest {
-  
+
   @Test
   public void classOnly() {
     final Injector injector = Injector.newInstance().add(Resolvers.multi(true));
@@ -46,7 +46,7 @@ public class MultiTest {
     injector.bind(Key.of(String.class), "y");
     injector.bind(Key.of(String.class), "z");
     injector.bind(Key.of(String.class, TestUtils.namedX()), "t"); // not collected
-    
+
     final List<String> list = injector.getInstance(Key.of(TestUtils.listStr(null)));
     Assert.assertEquals("Size", 3, list.size());
     Collections.sort(list);
@@ -56,7 +56,7 @@ public class MultiTest {
 
     Assert.assertEquals("Type", ArrayList.class, list.getClass());
   }
-  
+
   @Test
   public void qualified() {
     final Injector injector = Injector.newInstance().add(Resolvers.multi(true));
@@ -64,7 +64,7 @@ public class MultiTest {
     injector.bind(Key.of(String.class, TestUtils.namedX()), "y");
     injector.bind(Key.of(String.class, TestUtils.namedX()), "z");
     injector.bind(Key.of(String.class), "t"); // not collected
-    
+
     final List<String> list = injector.getInstance(Key.of(TestUtils.listStr(null), TestUtils.namedX()));
     Assert.assertEquals("Size", 3, list.size());
     Collections.sort(list);
@@ -74,7 +74,7 @@ public class MultiTest {
 
     Assert.assertEquals("Type", ArrayList.class, list.getClass());
   }
-  
+
   @Test
   public void set() {
     final Injector injector = Injector.newInstance().add(Resolvers.multi(true));
@@ -82,7 +82,7 @@ public class MultiTest {
     injector.bind(Key.of(String.class), "y");
     injector.bind(Key.of(String.class), "z");
     injector.bind(Key.of(String.class, TestUtils.namedX()), "t"); // not collected
-    
+
     final Set<String> set = injector.getInstance(Key.of(TestUtils.setStr(null)));
     Assert.assertEquals("Size", 3, set.size());
     final List<String> list = new ArrayList<>(set);
@@ -93,7 +93,7 @@ public class MultiTest {
 
     Assert.assertEquals("Type", HashSet.class, set.getClass());
   }
-  
+
   @Test
   public void extendedExplicit() {
     final Injector injector = Injector.newInstance().add(Resolvers.multi(true));
@@ -102,7 +102,7 @@ public class MultiTest {
     injector.bind(Key.of(String.class), "x");
     injector.bind(Key.of(String.class), "y");
     injector.bind(Key.of(String.class), "z");
-    
+
     final List<Object> list = injector.getInstance(Key.of(TestUtils.listObj(null)));
     Assert.assertEquals("Size", 4, list.size());
     Assert.assertTrue("Element 1", list.contains("x"));
@@ -112,7 +112,7 @@ public class MultiTest {
 
     Assert.assertEquals("Type", ArrayList.class, list.getClass());
   }
-  
+
   @Test
   public void strictExplicit() {
     final Injector injector = Injector.newInstance().add(Resolvers.multi(false));
@@ -121,14 +121,14 @@ public class MultiTest {
     injector.bind(Key.of(String.class), "x");
     injector.bind(Key.of(String.class), "y");
     injector.bind(Key.of(String.class), "z");
-    
+
     final List<Object> list = injector.getInstance(Key.of(TestUtils.listObj(null)));
     Assert.assertEquals("Size", 1, list.size());
     Assert.assertTrue("Obj", list.contains(obj));
 
     Assert.assertEquals("Type", ArrayList.class, list.getClass());
   }
-  
+
   @Test
   public void extendedImplicit() {
     final Injector injector = Injector.newInstance().add(Resolvers.multi(true));
@@ -136,7 +136,7 @@ public class MultiTest {
     injector.bind(Key.of(String.class), "x");
     injector.bind(Key.of(String.class), "y");
     injector.bind(Key.of(String.class), "z");
-    
+
     final List<Object> list = injector.getInstance(Key.of(TestUtils.listObj(null)));
     Assert.assertEquals("Size", 4, list.size());
     Assert.assertTrue("Element 1", list.contains("x"));
@@ -152,7 +152,7 @@ public class MultiTest {
 
     Assert.assertEquals("Type", ArrayList.class, list.getClass());
   }
-  
+
   @Test
   public void strictImplicit() {
     final Injector injector = Injector.newInstance().add(Resolvers.multi(false));
@@ -160,7 +160,7 @@ public class MultiTest {
     injector.bind(Key.of(String.class), "x");
     injector.bind(Key.of(String.class), "y");
     injector.bind(Key.of(String.class), "z");
-    
+
     final List<Object> list = injector.getInstance(Key.of(TestUtils.listObj(null)));
     Assert.assertEquals("Size", 1, list.size());
     boolean has = false;
@@ -170,10 +170,10 @@ public class MultiTest {
       }
     }
     Assert.assertTrue("Obj", has);
-    
+
     Assert.assertEquals("Type", ArrayList.class, list.getClass());
   }
-  
+
   @Retention(RetentionPolicy.RUNTIME)
   @Qualifier
   public static @interface Collect {}
@@ -217,16 +217,16 @@ public class MultiTest {
       return () -> ac2;
     }
   }
-  
+
   public static class Collector {
-    
+
     private final List<AutoCloseable> list;
     @Inject
     public Collector(@Collect final List<AutoCloseable> list) {
       this.list = list;
     }
   }
-  
+
   @Test
   public void complex() {
     final Injector injector = Injector.newInstance().add(Resolvers.multi(true)).add(Interceptors.providesBinder());

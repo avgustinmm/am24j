@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,10 +25,12 @@ import javax.inject.Provider;
 import javax.inject.Qualifier;
 
 /**
+ * Utilities
+ *
  * @author avgustinmm
  */
-public class Utils {
-   
+class Utils {
+
   @SuppressWarnings("unchecked")
   public static Class<?> clazz(final Type type) {
     if (type instanceof Class) {
@@ -39,7 +41,7 @@ public class Utils {
       throw InjectException.of("Can't reoslve class of " + type.getTypeName() + ")");
     }
   }
-  
+
   public static List<Annotation> qualifiers(final Annotation[] annotations) {
     final List<Annotation> qualifiers = new ArrayList<>();
     for (final Annotation annptation : annotations) {
@@ -49,7 +51,7 @@ public class Utils {
     }
     return qualifiers;
   }
-  
+
   public static Type providerType(final Class<?> clazz) {
     final Type[] interfaces = clazz.getGenericInterfaces();
     if (interfaces != null) {
@@ -61,10 +63,10 @@ public class Utils {
           }
         }
       }
-    } 
+    }
     return null;
   }
-  
+
   public static List<Type> types(final Class<?> clazz) {
     final List<Type> types = new ArrayList<>();
     types.add(clazz);

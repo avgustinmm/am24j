@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,62 +38,62 @@ import javax.inject.Qualifier;
 import javax.inject.Singleton;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import am24j.commons.Ctx;
 import am24j.inject.spi.Interceptor;
 import am24j.inject.spi.Resolver;
 
 /**
  * Injector - not thread safe
- * 
+ *
  * @author avgustinmm
  */
 public class Injector {
-  
-  private final Logger log; 
-  
+
+  private final Logger log;
+
   private final List<Resolver> resolvers = new ArrayList<>();
   private final List<Interceptor> interceptors = new ArrayList<>();
   private final List<BindListener> bindListeners = new ArrayList<>();
 
   private final Map<Key, Provider<Object>> bindings = new HashMap<>();
-  
+
   private Injector(final Logger log) {
-    this.log = log == null ? LoggerFactory.getLogger("INJECTOR") : log; 
+    this.log = log == null ? Ctx.logger("Injector") : log;
   }
 
   public static Injector newInstance() {
     return newInstance(null);
   }
-  
+
   public static Injector newInstance(final Logger log) {
     final Injector injector = new Injector(log);
     injector.bind(Key.of(Injector.class), injector);
     return injector;
   }
-  
-  // Note: if resolver implements interceptor interface and is not explicitly added as interceptor it intercepts the 
-  // final created object BUT is unable to modify it - i.e. the resilt is not taken in account 
+
+  // Note: if resolver implements interceptor interface and is not explicitly added as interceptor it intercepts the
+  // final created object BUT is unable to modify it - i.e. the resilt is not taken in account
   public <T> Injector add(final Resolver resolver) {
     log.info("Add resolver: {}", resolver);
-    resolvers.add((Resolver)resolver);
+    resolvers.add(resolver);
     if (resolver instanceof BindListener) {
       bindListeners.add((BindListener)resolver);
     }
     return this;
   }
-  
+
   public Injector add(final Interceptor interceptor) {
     log.info("Add interceptor: {}", interceptor);
     interceptors.add(interceptor);
     return this;
   }
-  
+
   public Injector add(final BindListener bindListener) {
     bindListeners.add(bindListener);
     return this;
   }
-  
+
   public Injector bind(final Key key, final Object instance) { // instance - instance or provider
     log.info("Bind an instance {} -> {}", key, instance);
     // TODO - check if no binding (configuration may allow overriding)
@@ -102,7 +102,7 @@ public class Injector {
     bindListeners.forEach(bl -> bl.bound(key, newProvider, Injector.this));
     return this;
   }
-  
+
   @SuppressWarnings("unchecked")
   public Injector bind(final Key key, final Provider<?> provider) {
     log.info("Bind an provider: {} -> {}", key, provider);
@@ -112,7 +112,7 @@ public class Injector {
     bindListeners.forEach(bl -> bl.bound(key, (Provider<Object>)provider, Injector.this));
     return this;
   }
-  
+
   public Injector bind(final Key key, final Class<?> clazz) {
     log.info("Bind an class: {} -> {}", key, clazz);
     // TODO - check if no binding (configuration may allow overriding)
@@ -133,7 +133,7 @@ public class Injector {
       throw t;
     }
   }
-  
+
   @Override
   public String toString() {
     return "Injector (Resolvers: " + resolvers + ", interceptors: " + interceptors + ")";
@@ -178,7 +178,7 @@ public class Injector {
         log.trace("[{}][{}] not found by {}", key, point, resolver);
       }
     }
-    
+
     final Provider<Object> newProvider;
     if (key.type() instanceof ParameterizedType && Utils.clazz(key.type()) == Provider.class) {
       log.debug("[{}][{}] provider is not bound, returns auto provider", key, point);
@@ -201,10 +201,11 @@ public class Injector {
     } else {
       log.trace("[{}][{}] singleton, create once", key, point);
       return new Provider<Object>() {
-        
+
         private boolean filled;
         private Object obj;
-        
+
+        @Override
         public synchronized Object get() {
           if (!filled) {
             obj = intercapt(key, point, getInstanceCheckCyclicDependencies(key, clazz));
@@ -224,14 +225,14 @@ public class Injector {
     }
     final Object objF = obj;
     resolvers.forEach(resolver -> {
-      if (resolver instanceof Interceptor && !interceptors.contains((Interceptor)resolver)) {
+      if (resolver instanceof Interceptor && !interceptors.contains(resolver)) {
         ((Interceptor)resolver).handle(key, point, objF, Injector.this);
       }
     });
     return obj;
   }
 
-  private final List<Key> stack = new ArrayList<>(); 
+  private final List<Key> stack = new ArrayList<>();
   private Object getInstanceCheckCyclicDependencies(final Key key, final Class<?> clazz) {
     final int index = stack.indexOf(key);
     if (index == -1) {
@@ -253,7 +254,7 @@ public class Injector {
       throw InjectException.of(sb.toString());
     }
   }
-  
+
   // creates an instances by JSR 330 annotations
   private <T> T createByJSR330(final Key key, final Class<T> clazz) {
     try {
@@ -261,7 +262,7 @@ public class Injector {
       try { // if possible
         iConstr.setAccessible(true);
       } catch (final Throwable t) {}
-      
+
       final Type[] types = iConstr.getGenericParameterTypes();
       final T obj;
       if (types == null || types.length == 0) {
@@ -275,7 +276,7 @@ public class Injector {
         for (int i = 0; i < args.length; i++) {
           final int iF = i;
           args[i] = getInstance(
-            Key.of(types[i], qualifier(paramAnnotations[i], () -> "consructor " + iConstr + " param " + iF)), 
+            Key.of(types[i], qualifier(paramAnnotations[i], () -> "consructor " + iConstr + " param " + iF)),
             Optional.of(new Point(iConstr, i)));
           if (args[i] != null && !paramTypes[i].isAssignableFrom(args[i].getClass())) {
             log.error("[{}][{}] Constructor {}'s parameter {} is of type {} but resolved object is of type {}!", key, clazz.getName(), iConstr, i, paramTypes[i], args[i].getClass());
@@ -290,7 +291,7 @@ public class Injector {
       throw InjectException.of(e);
     }
   }
-  
+
   private <T extends S, S> T injectFields(final Key key, final Class<S> clazz, final T obj) throws IllegalArgumentException, IllegalAccessException {
     for (final Field field : clazz.getDeclaredFields()) {
       if (field.getAnnotation(Inject.class) != null) {
@@ -307,13 +308,13 @@ public class Injector {
         field.set(obj, value);
       }
     }
-    
+
     // inject super
     @SuppressWarnings("unchecked")
     final Class<S> superCLazz = (Class<S>)clazz.getSuperclass();
     return superCLazz == null || superCLazz == Object.class ? obj : injectFields(key, superCLazz, obj);
   }
-  
+
   private <T extends S, S> T injectMethids(final Key key, final Class<S> clazz, final T obj, final List<String> injected) throws Throwable {
     for (final Method method : clazz.getDeclaredMethods()) {
       if (method.getAnnotation(Inject.class) != null) {
@@ -322,7 +323,7 @@ public class Injector {
           try { // if possible
             method.setAccessible(true);
           } catch (final Throwable t) {}
-          
+
           log.debug("[{}][{}] inject method: {}", key, clazz.getName(), method);
           final Type[] types = method.getGenericParameterTypes();
           try {
@@ -351,13 +352,13 @@ public class Injector {
         }
       }
     }
-    
+
     // inject super
     @SuppressWarnings("unchecked")
     final Class<S> superCLazz = (Class<S>)clazz.getSuperclass();
     return superCLazz == null || superCLazz == Object.class ? obj : injectMethids(key, superCLazz, obj, injected);
   }
-  
+
   @SuppressWarnings("unchecked")
   private static <T> Constructor<T> findIConstr(final Class<T> clazz) {
     Constructor<T> iConstr = null;
@@ -380,7 +381,7 @@ public class Injector {
       return iConstr;
     }
   }
-  
+
   private static Annotation qualifier(final Annotation[] annotations, final Supplier<String> target) {
     Annotation qualifier = null;
     for (final Annotation annotation : annotations) {
@@ -394,7 +395,7 @@ public class Injector {
     }
     return qualifier;
   }
-  
+
   private static String id(final Method method) {
     final StringBuilder sb = new StringBuilder(method.getName()).append(":(");
     final Class<?>[] parameterTypes = method.getParameterTypes();
@@ -407,35 +408,35 @@ public class Injector {
     sb.append(")");
     return sb.toString();
   }
-  
+
   public static class Key {
-    
+
     private final Type type;
     private final Optional<Annotation> qualifer;
-    
+
     private Key(final Type type, final Annotation qualifer) {
       Objects.requireNonNull(type, "Type must be non-null!");
       // TOOD - check if annotation (if not null is Quailigef - maybe congigurable
       this.type = type;
       this.qualifer = Optional.ofNullable(qualifer);
     }
-    
+
     public static Key of(final Type type) {
-      return new Key(type, null);  
+      return new Key(type, null);
     }
 
     public static Key of(final Type type, final Annotation qualifer) {
       return new Key(type, qualifer);
     }
-    
+
     public Type type() {
       return type;
     }
-    
+
     public Optional<Annotation> qualifer() {
       return qualifer;
     }
-    
+
     @Override
     public boolean equals(final Object o) {
       if (o instanceof Key) {
@@ -445,50 +446,50 @@ public class Injector {
         return false;
       }
     }
-    
+
     @Override
     public int hashCode() {
-      return Objects.hashCode(type) + 31 * Objects.hashCode(qualifer); 
+      return Objects.hashCode(type) + 31 * Objects.hashCode(qualifer);
     }
-    
+
     @Override
     public String toString() {
       return qualifer.map(q -> type.getTypeName() + "(qualifier: " + q + ")").orElse(type.getTypeName());
     }
   }
-  
+
   public static class Point {
 
     private final Member member; // constructor, method or field
     private final Object obj; // object to be injected if field or method injection
     private final int index; // index of parameter if the member is constructor or method
-    
+
     Point(final Member member, final Object obj, final int index) {
       this.member = member;
       this.obj = obj;
       this.index = index;
     }
-    
+
     <T> Point(final Constructor<T> constr, final int index) {
       this(constr, null, index);
     }
-    
+
     Point(final Field field, final Object obj) {
       this(field, obj, -1);
     }
-    
+
     public Object obj() {
       return obj;
     }
-    
+
     public Member member() {
       return member;
     }
-    
+
     public int index() {
       return index;
     }
-    
+
     boolean isProvider() {
       if (member instanceof Executable) {
         return ((Executable)member).getParameterTypes()[index] == Provider.class;
@@ -497,9 +498,9 @@ public class Injector {
       }
     }
   }
-  
+
   public static interface BindListener {
-    
+
     public void bound(final Key key, final Provider<Object> provider, final Injector injector);
   }
 }

@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -35,42 +35,44 @@ import am24j.inject.Injector.Point;
 import am24j.inject.spi.Resolver;
 
 /**
+ * Implements some resolvers
+ *
  * @author avgustinmm
  */
 public class Resolvers {
-  
+
   private Resolvers() {}
 
   public static Resolver multi() {
     return multi(true);
   }
-  
+
   // extended takes in account inheritance - i.e adds in collection all that extends the kty type
   public static Resolver multi(final boolean extended) {
     return new Multi(extended);
   }
-  
+
   public static Resolver implementedBy() {
     return implementedBy(am24j.inject.annotation.ImplementedBy.class);
   }
-  
+
   public static Resolver implementedBy(final Class<? extends Annotation> implementedByClass) {
     return new ImplementedBy(implementedByClass);
   }
-  
+
   /**
-   * Provides collection of objects retrieving them from all bound(!) prividers matching the key. 
+   * Provides collection of objects retrieving them from all bound(!) prividers matching the key.
    */
   public static class Multi implements Resolver, BindListener {
 
     private final boolean extended;
     private final Map<Key, List<Provider<Object>>> candidates = new HashMap<>();
     private final Map<Key, Collection<Object>> collections = new HashMap<>();
-    
+
     protected Multi(final boolean extended) {
       this.extended = extended;
     }
-    
+
     @Override
     public Provider<Object> get(final Key key, final Optional<Point> point, final Injector injector) {
       if (Collection.class.isAssignableFrom(Utils.clazz(key.type()))) {
@@ -98,10 +100,10 @@ public class Resolvers {
           });
         }
       }
-      
+
       throw NOT_FOUND;
     }
-    
+
     @Override
     public void bound(final Key key, final Provider<Object> provider, final Injector injector) {
       final List<Provider<Object>> providers = candidates.computeIfAbsent(key, k -> new ArrayList<>());
@@ -117,18 +119,18 @@ public class Resolvers {
         }
       });
     }
-    
+
     @Override
     public String toString() {
       return "Multi(" + hashCode() + ")";
     }
-    
+
     protected boolean match(final Key key, final Key collectionKey) {
       // check qualifiers
       if (!qualifiersMAtch(key, collectionKey)) {
         return false;
       }
-      
+
       if (collectionKey.type() instanceof ParameterizedType) { // parameterized collection
         final Type requiredType = ((ParameterizedType)collectionKey.type()).getActualTypeArguments().length == 1 ? ((ParameterizedType)collectionKey.type()).getActualTypeArguments()[0] : Object.class;
         final Type providerType = Utils.providerType(Utils.clazz(key.type()));
@@ -187,12 +189,12 @@ public class Resolvers {
       return false;
     }
   }
-  
+
   public static class ImplementedBy implements Resolver {
 
     private final Class<? extends Annotation> implementedByClass;
     private final Method value;
-    
+
     protected ImplementedBy(final Class<? extends Annotation> implementedByClass) {
       this.implementedByClass = implementedByClass;
       try {
@@ -207,7 +209,7 @@ public class Resolvers {
         throw InjectException.of("ImplementBy annotation class MUST have no-argument method \"value\"!");
       }
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public Provider<Object> get(final Key key, final Optional<Point> point, final Injector injector) {
@@ -226,10 +228,10 @@ public class Resolvers {
           };
         }
       }
-      
+
       throw NOT_FOUND;
     }
-    
+
     @Override
     public String toString() {
       return "Implement4edBy(" + hashCode() + ")";

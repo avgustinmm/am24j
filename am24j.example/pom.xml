@@ -11,6 +11,8 @@
   <artifactId>am24j.example</artifactId>
   <packaging>jar</packaging>
   
+  <name>Example Application</name>
+  
   <build>
     <finalName>example</finalName>
     <plugins>      
@@ -46,12 +48,12 @@
   <dependencies>
     <dependency>
       <groupId>am24j</groupId>
-      <artifactId>am24j.runtime</artifactId>
+      <artifactId>am24j.launcher</artifactId>
       <version>${project.version}</version>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>am24j</groupId>
-      <artifactId>am24j.launcher</artifactId>
+      <artifactId>am24j.vrt</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

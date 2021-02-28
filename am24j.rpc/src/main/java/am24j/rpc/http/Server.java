@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,13 +37,13 @@ import javax.inject.Singleton;
 import org.apache.avro.Protocol;
 import org.apache.avro.Protocol.Message;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import am24j.commons.ASync;
+import am24j.commons.Ctx;
 import am24j.commons.Reflect;
 import am24j.commons.Utils;
 import am24j.rpc.AuthVerfier;
-import am24j.rpc.Ctx;
+import am24j.rpc.RPCCtx;
 import am24j.rpc.RPCException;
 import am24j.rpc.Remote;
 import am24j.rpc.Service;
@@ -58,28 +58,31 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 
 /**
+ * HTTP RPC Server
+ *
  * @author avgustinmm
  */
 @Singleton
 public class Server implements Http.HttpHandler {
-  
-  // TODO get it via runtime ctx (?) (inject it ?)
-  private static final Logger LOG = LoggerFactory.getLogger("am24j.rpc.http.server");
+
+  private static final Logger LOG = Ctx.logger("rpc.http.server");
+
+  private static final String HTTP_RPC_ROOT = Ctx.prop("rpc.http.root", "/rpc");
 
   private final List<AuthVerfier<HttpServerRequest>> authVerfiers;
   private final Map<String, MethodHandler> methodsMap;
-  
+
   private final Vertx vertx;
-  
+
   @Inject
   public Server(
-      @Remote final List<Object> services, 
-      final List<AuthVerfier<HttpServerRequest>> authVerfiers, 
+      @Remote final List<Object> services,
+      final List<AuthVerfier<HttpServerRequest>> authVerfiers,
       final Vertx vertx) {
     LOG.info("Star (servicesL {})", services);
     this.authVerfiers = authVerfiers;
     this.vertx = vertx;
-    methodsMap = 
+    methodsMap =
       services.stream()
         .flatMap(this::methodDescriptors)
         .collect(Collectors.toMap(MethodHandler::path, Function.identity()));
@@ -90,20 +93,20 @@ public class Server implements Http.HttpHandler {
 
   @Override
   public String path() {
-    return "/rpc/*";
+    return HTTP_RPC_ROOT + "/*";
   }
 
   @Override
   public Handler<HttpServerRequest> handler() {
-    return requwst -> { 
+    return requwst -> {
       final Executor vExecutor = VertxUtils.ctxExecutor(vertx);
       requwst.pause(); // otherwise ? mark as read ?
       ASync
         .sequentiallyGetSkipErrors(
           Utils.map(
-            authVerfiers.iterator(), 
-            authVerifier -> authVerifier.ctx(requwst).thenApply(ctx -> ctx == Ctx.NULL ? null : ctx))) // nulls Ctx.NULL in order to proceed thurder
-        .thenApply(ctx -> ctx == null ? Ctx.NULL : ctx) // if null - set to Ctx.NULL
+            authVerfiers.iterator(),
+            authVerifier -> authVerifier.ctx(requwst).thenApply(ctx -> ctx == RPCCtx.NULL ? null : ctx))) // nulls Ctx.NULL in order to proceed thurder
+        .thenApply(ctx -> ctx == null ? RPCCtx.NULL : ctx) // if null - set to Ctx.NULL
         .whenCompleteAsync((ctx, error) -> {
           if (error == null) {
             final MethodHandler handler = methodsMap.get(requwst.uri());
@@ -126,40 +129,40 @@ public class Server implements Http.HttpHandler {
     };
   }
 
-  private Stream<MethodHandler> methodDescriptors(final Object service) {    
+  private Stream<MethodHandler> methodDescriptors(final Object service) {
     return Arrays.stream(service.getClass().getInterfaces()) // only directly declared interfaces
       .filter(iClass -> Objects.nonNull(iClass.getAnnotation(Service.class)))
       .flatMap(iClass -> methodDescriptors(iClass, service));
   }
-  
+
   private Stream<MethodHandler> methodDescriptors(final Class<?> iClass, final Object service) {
     final Protocol aProto = Proto.protocol(iClass);
-    
+
     return Arrays.stream(iClass.getMethods()) // all methods - not only declared
       .collect(Collectors.toMap(Reflect::methodSig, Function.identity()))
       .values()
       .stream()
       .map(method -> new MethodHandler(method, service, aProto));
   }
-  
+
   private class MethodHandler {
-    
+
     private final Method method;
     private final Object service;
     private final Message aMessage;
-    
+
     private final String path;
     private final boolean stream;
-    
+
     private MethodHandler(final Method method, final Object service, final Protocol aProto) {
       this.method = method;
       this.service = service;
       aMessage = aProto.getMessages().get(Proto.methodName(method));
-      
-      path = "/rpc" + '/' + aProto.getName() + '/'  + aMessage.getName();
+
+      path = HTTP_RPC_ROOT + '/' + aProto.getName() + '/'  + aMessage.getName();
       stream = Proto.isStream(method);
     }
-    
+
     private Future<Void> handle(final HttpServerRequest requwst, final Executor vExecutor) {
       final boolean json = !"avro/binary".equals(requwst.getHeader("content-type"));
       return handle0(requwst, json, vExecutor).recover(t -> {
@@ -168,7 +171,7 @@ public class Server implements Http.HttpHandler {
         am24j.rpc.avro.RPCException rpcExc = new am24j.rpc.avro.RPCException().setUUID(uuid).setMessage(t.getMessage()).setType(t.getClass().getName());
         final String jsonTesp = stream(rpcExc, json);
         return respond(requwst.response(), 500, json, jsonTesp);
-      });  
+      });
     }
     private Future<Void> handle0(final HttpServerRequest requwst, final boolean json, final Executor vExecutor) {
       try {
@@ -181,7 +184,7 @@ public class Server implements Http.HttpHandler {
         return Future.failedFuture(t);
       }
     }
-    
+
     private String path() {
       return path;
     }
@@ -215,9 +218,9 @@ public class Server implements Http.HttpHandler {
       response.setChunked(true);
       try {
         final Subscriber<Object> subscriber = new Subscriber<>() {
-          
+
           private Subscription subscription;
-          
+
           @Override
           public void onSubscribe(final Subscription subscription) {
             vExecutor.execute(() -> {
@@ -231,7 +234,7 @@ public class Server implements Http.HttpHandler {
           public void onNext(final Object item) {
             vExecutor.execute(() -> {
               response.write(stream(item, json));
-              subscription.request(1); // no backpressure 
+              subscription.request(1); // no backpressure
             });
           }
 
@@ -262,7 +265,7 @@ public class Server implements Http.HttpHandler {
       }
       return promise.future();
     }
-    
+
     private Future<Object[]> parse(final HttpServerRequest requwst, final boolean json) {
       final String contentLength = requwst.getHeader("content-length");
       LOG.debug("Received: {}", contentLength);
@@ -272,7 +275,7 @@ public class Server implements Http.HttpHandler {
         return body;
       }).map(body -> Proto.decodeReq(aMessage.getRequest(), new ByteArrayInputStream(body.getBytes()), json));
     }
-    
+
     private Future<Void> respond(final HttpServerResponse response, final int status, final boolean json, final String content)  {
       LOG.debug("Response content: {}", content);
       return response.setStatusCode(status)
@@ -283,7 +286,7 @@ public class Server implements Http.HttpHandler {
           return null;
         });
     }
-    
+
     private String stream(final Object resp, final boolean json) {
       return new String(Proto.encodeResp(aMessage.getResponse(), aMessage.getErrors(), resp, json), StandardCharsets.UTF_8);
     }

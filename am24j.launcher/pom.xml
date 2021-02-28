@@ -10,4 +10,7 @@
   
   <artifactId>am24j.launcher</artifactId>
   <packaging>jar</packaging>
+  
+  <name>App Launher</name>
+  <description>Launher that provide access to classes and resources packed in internal jars</description>
 </project>

@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -54,6 +54,8 @@ import am24j.commons.Tuple2;
 import am24j.rpc.Service;
 
 /**
+ * Avro protocol builder
+ *
  * @author avgustinmm
  */
 public class Proto {
@@ -73,7 +75,7 @@ public class Proto {
       }
     }
   }
-  
+
   public static boolean isServiceMethod(final Method method) {
     try {
       checkServiceMethod(method);
@@ -82,9 +84,9 @@ public class Proto {
       return false;
     }
   }
-  
+
   public static void checkServiceInterface(final Class<?> iClass) {
-    if (iClass.isInterface()) {        
+    if (iClass.isInterface()) {
       for (final Method method : iClass.getMethods()) {// all methods - not only declared
         checkServiceMethod(method);
       }
@@ -92,7 +94,7 @@ public class Proto {
       throw new IllegalArgumentException("Service insterace must be an insterface! Found class: " + iClass.getName() + "!");
     }
   }
-  
+
   public static boolean isServiceInterface(final Class<?> iClass) {
     try {
       checkServiceInterface(iClass);
@@ -106,11 +108,11 @@ public class Proto {
     final Protocol proto = protocol(iClass);
     return proto.getNamespace() == null || proto.getNamespace().length() == 0 ? proto.getName() : proto.getNamespace() + "." + proto.getName();
   }
-  
+
   public static boolean isStream(final Method method) {
     return method.getReturnType() == void.class || method.getReturnType() == Void.class;
   }
-  
+
   public static String methodName(final Method method) {
     final List<Method> sameNameMethos = Reflect.findByName(method.getDeclaringClass(), method.getName()).collect(Collectors.toList());;
     if (sameNameMethos.size() == 1) {
@@ -129,31 +131,31 @@ public class Proto {
     if (!isServiceInterface(iClass)) {
       throw new IllegalArgumentException("The class " + iClass.getName() + " doesn't comply with service requirements!");
     }
-    
+
     String serviceName = iClass.getName();
     final Service serviceAnn = iClass.getAnnotation(Service.class);
     if (serviceAnn != null) {
-      serviceName = 
+      serviceName =
         (serviceAnn == null || serviceAnn.serviceName().length() == 0 ? iClass.getName() : serviceAnn.serviceName()) +
         (serviceAnn == null || serviceAnn.version().length() == 0 ? "" : '_'+ serviceAnn.version());
     }
     final int index = serviceName.lastIndexOf('.');
     final Protocol protocol = new Protocol(serviceName.substring(index + 1), index == -1 ? "" : serviceName.substring(0, index));
-    
+
     final Collection<Schema> types = new ArrayList<>();
     types.add(RPCException.RPC_EXCEPTION_SCHEMA);
     Arrays.stream(iClass.getMethods()) // all methods - not only declared
       .collect(Collectors.toMap(Reflect::methodSig, Function.identity()))
       .values()
-      .forEach(method -> {        
+      .forEach(method -> {
         final String methodName = methodName(method);
         protocol.getMessages().put(
-          methodName, 
+          methodName,
           protocol.createMessage(
-            methodName, null, 
-            Collections.emptyMap(), 
-            requestSchema(protocol.getNamespace(), methodName, method, types), 
-            responseSchema(method, types), 
+            methodName, null,
+            Collections.emptyMap(),
+            requestSchema(protocol.getNamespace(), methodName, method, types),
+            responseSchema(method, types),
             Schema.createUnion(Schema.create(Schema.Type.STRING), RPCException.RPC_EXCEPTION_SCHEMA)));
       });
     protocol.setTypes(types);
@@ -181,7 +183,7 @@ public class Proto {
   }
   public static byte[] encodeReqy(final Schema reqSchema, final Object[] args, final boolean json) {
     try (final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-      final Encoder encoder = json ? 
+      final Encoder encoder = json ?
         ENCODER_FACTORY.jsonEncoder(reqSchema, baos, true) :
         ENCODER_FACTORY.binaryEncoder(baos, null);
       final List<Schema.Field> params = reqSchema.getFields();
@@ -200,7 +202,7 @@ public class Proto {
       throw new RuntimeException(e);
     }
   }
-  
+
   public static Object[] decodeReq(final Schema reqSchema, final InputStream is, final boolean json) {
     try {
 //      if (json && reqSchema.getType() == Schema.Type.NULL) {
@@ -220,24 +222,24 @@ public class Proto {
       throw new RuntimeException(e);
     }
   }
-  
+
   public static byte[] encodeResp(final Schema respSchema, final Schema errorSchema, final Object resp, final boolean json) {
     try (final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
       if (json) {
         return encodeReqy(
           jsonRespScehma(respSchema, errorSchema),
-          new Object[] {resp instanceof Exception ? null : resp, resp instanceof Exception ? resp : null}, 
+          new Object[] {resp instanceof Exception ? null : resp, resp instanceof Exception ? resp : null},
           json);
       } else {
         Encoder encoder = ENCODER_FACTORY.binaryEncoder(baos, null);
-  
+
         if (resp instanceof Exception) {
           try {
             encoder.writeBoolean(true);
             new SpecificDatumWriter<>(errorSchema).write(resp, encoder);
           } catch (final Throwable t) {
             baos.reset();
-            encoder = json ? 
+            encoder = json ?
               ENCODER_FACTORY.jsonEncoder(respSchema, baos) :
               ENCODER_FACTORY.binaryEncoder(baos, null);
             encoder.writeBoolean(true);
@@ -249,13 +251,13 @@ public class Proto {
         }
         encoder.flush();
       }
-        
+
       return baos.toByteArray();
     } catch (final IOException e) {
       throw new RuntimeException(e);
     }
   }
-  
+
   public static Object decodeResp(final Schema respSchema, final Schema errorSchema, final InputStream is, final boolean json) {
     try {
       if (json) {
@@ -277,7 +279,7 @@ public class Proto {
       throw new RuntimeException();
     }
   }
-  
+
   private static Schema requestSchema(final String namespace, final String name, final Method method, final Collection<Schema> protcolTypes) {
     final RecordBuilder<Schema> rTypeBuilder = SchemaBuilder.record(name + "_Req");
     rTypeBuilder.namespace(namespace); // empty namesoace is treated as null
@@ -294,7 +296,7 @@ public class Proto {
     }
     return fAssembler.endRecord();
   }
-  
+
   private static Schema responseSchema(final Method method, final Collection<Schema> protcolTypes) {
     final Type returnType = responsType(method);
     final Schema schema = returnType == null ? Schema.create(Schema.Type.NULL) : Avro.forType(returnType);
@@ -311,7 +313,7 @@ public class Proto {
     }
     return types;
   }
-  
+
   private static Type responsType(final Method method) {
     final Type type = method.getGenericReturnType();
     Type realType = type;
@@ -335,15 +337,15 @@ public class Proto {
 
   private static void addType(final Schema schema, final Collection<Schema> protcolTypes) {
     if ((schema.getType() == org.apache.avro.Schema.Type.RECORD ||
-        schema.getType() == org.apache.avro.Schema.Type.FIXED || 
-        schema.getType() == org.apache.avro.Schema.Type.ENUM) 
+        schema.getType() == org.apache.avro.Schema.Type.FIXED ||
+        schema.getType() == org.apache.avro.Schema.Type.ENUM)
         && !protcolTypes.contains(schema)) {
       protcolTypes.add(schema);
     }
-  }  
+  }
   /**
   private static final InputStream EMPTY = new InputStream() {
-    
+
     @Override
     public int read() throws IOException {
       return -1;
@@ -351,7 +353,7 @@ public class Proto {
   };
   @SuppressWarnings("rawtypes")
   private static final Marshaller NOP = new Marshaller() {
-    
+
     @Override
     public InputStream stream(final Object value) {
       if (value != null) throw new IllegalArgumentException("NOP marshaller supports only void (i.e. null object is expected):! Called with: " + value + "!");

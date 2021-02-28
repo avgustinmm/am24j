@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -33,19 +33,19 @@ import org.junit.Test;
  */
 @Ignore
 public class BaseTest {
-  
+
   protected static IService service;
-  
+
   @Test
   public void testVoidCall() {
     Assert.assertEquals(service.voidCall().toCompletableFuture().join(), null);
   }
-  
+
   @Test
   public void testGetCall() {
     Assert.assertEquals(service.getCall(3, "test").toCompletableFuture().join(), "testtesttest");
   }
-  
+
   @Test(expected = RuntimeException.class)
   public void testThrowComplete() throws Throwable {
     try {
@@ -63,18 +63,18 @@ public class BaseTest {
       throw e.getCause();
     }
   }
-  
+
   @Test
   public void testStream() {
     final List<Integer> expected = Arrays.asList(new Integer[] {-1, 0, 1, 2, 3, 4, 5, -2});
     final List<Integer> received = Collections.synchronizedList(new ArrayList<>());
     final CompletableFuture<Void> finished = new CompletableFuture<>();
-    
+
     service.stream(6, new Subscriber<String>() {
-      
+
       private int round = 0;
       private Subscription subscription;
-      
+
       @Override
       public void onSubscribe(final Subscription subscription) {
         this.subscription = subscription;
@@ -82,7 +82,7 @@ public class BaseTest {
         round++;
         subscription.request(3);
       }
-      
+
       @Override
       public void onNext(final String item) {
         received.add(Integer.parseInt(item));
@@ -96,22 +96,22 @@ public class BaseTest {
           subscription.request(101); // unexoected!!!
         }
       }
-      
+
       @Override
       public void onError(final Throwable throwable) {
         received.add(-2);
         finished.completeExceptionally(throwable);
       }
-      
+
       @Override
       public void onComplete() {
         received.add(-2);
         finished.complete(null);
       }
     });
-    
+
     finished.join();
-    
+
     Assert.assertEquals(expected, received);
   }
 }

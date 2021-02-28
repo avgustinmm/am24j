@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,18 +34,18 @@ import javax.inject.Named;
 
 import org.apache.avro.Protocol;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import am24j.commons.ASync;
+import am24j.commons.Ctx;
 import am24j.commons.Reflect;
 import am24j.commons.Utils;
 import am24j.rpc.AuthVerfier;
-import am24j.rpc.Ctx;
+import am24j.rpc.RPCCtx;
 import am24j.rpc.RPCException;
+import am24j.rpc.Remote;
 import am24j.rpc.Service;
 import am24j.rpc.avro.Proto;
 import am24j.vertx.VertxUtils;
-import am24j.rpc.Remote;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.MethodDescriptor.MethodType;
@@ -59,26 +59,30 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
+/**
+ * GRCPC Server
+ *
+ * @author avgustinmm
+ */
 public class Server implements AutoCloseable {
-  
-  // TODO get it via runtime ctx (?) (inject it ?)
-  private static final Logger LOG = LoggerFactory.getLogger("am24j.rpc.grpc.server");
-  
+
+  private static final Logger LOG = Ctx.logger("rpc.grpc.server");
+
   private final List<AuthVerfier<Metadata>> authVerfiers;
   private final Vertx vertx;
-  
+
   private final Future<String> deployment;
-  
+
   @Inject
   public Server(
-      @Remote final List<Object> services, 
-      final List<AuthVerfier<Metadata>> authVerfiers, 
-      @Named("grpc_server.json") final DeploymentOptions options, 
+      @Remote final List<Object> services,
+      final List<AuthVerfier<Metadata>> authVerfiers,
+      @Named("grpc_server.json") final DeploymentOptions options,
       final Vertx vertx) {
     LOG.info("Star (options: {}, servicesL {})", options.toJson(), services);
     this.authVerfiers = authVerfiers;
     this.vertx = vertx;
-    final List<ServerServiceDefinition> ssdList = 
+    final List<ServerServiceDefinition> ssdList =
       services.stream()
         .flatMap(this::serviceDefinitions)
         .collect(Collectors.toList());
@@ -92,7 +96,7 @@ public class Server implements AutoCloseable {
     }
     deployment = vertx.deployVerticle(() -> new ServerVerticle(ssdList), options);
   }
-  
+
   @Override
   public void close() {
     LOG.info("Close");
@@ -102,15 +106,15 @@ public class Server implements AutoCloseable {
     });
   }
 
-  private Stream<ServerServiceDefinition> serviceDefinitions(final Object service) {    
+  private Stream<ServerServiceDefinition> serviceDefinitions(final Object service) {
     return Arrays.stream(service.getClass().getInterfaces()) // only directly declared interfaces
       .filter(iClass -> Objects.nonNull(iClass.getAnnotation(Service.class)))
       .map(iClass -> serviceDefinition(iClass, service));
   }
-  
+
   private ServerServiceDefinition serviceDefinition(final Class<?> iClass, final Object service) {
     final Protocol aProto = Proto.protocol(iClass);
-    
+
     final ServerServiceDefinition.Builder builder = ServerServiceDefinition.builder(aProto.getName());
     Arrays.stream(iClass.getMethods()) // all methods - not only declared
       .collect(Collectors.toMap(Reflect::methodSig, Function.identity()))
@@ -119,9 +123,9 @@ public class Server implements AutoCloseable {
         final MethodDescriptor<Object[], Object> md = Common.methodDescriptor(method, aProto);
         builder.addMethod(
           ServerMethodDefinition.create(
-            md, 
+            md,
             new ServerCallHandler<Object[], Object>() {
-    
+
               @Override
               public Listener<Object[]> startCall(final ServerCall<Object[], Object> call, final Metadata headers) {
                 if (md.getType() == MethodType.UNARY) {
@@ -134,11 +138,11 @@ public class Server implements AutoCloseable {
       });
     return builder.build();
   }
-  
+
   private final class UnaryListener extends BaseListener {
-    
+
     private UnaryListener(
-        final ServerCall<Object[], Object> call, final Metadata headers, 
+        final ServerCall<Object[], Object> call, final Metadata headers,
         final Method method, final Object service) {
       super(call, headers, method, service);
     }
@@ -161,12 +165,12 @@ public class Server implements AutoCloseable {
       }
     }
   }
-  
+
   private final class ServerStreamListener extends BaseListener {
 
     private final CompletableFuture<Subscription> subscriptionFuture = new CompletableFuture<>(); // TODO via vertx could we set and use it in single thread
     private final Subscriber<Object> subscriber = new Subscriber<>() {
-      
+
       @Override
       public void onSubscribe(final Subscription subscription) {
         vExecutor.execute(() -> subscriptionFuture.complete(subscription));
@@ -197,16 +201,16 @@ public class Server implements AutoCloseable {
         vExecutor.execute(() -> call.close(Status.OK, new Metadata()));
       }
     };
-    
+
     private ServerStreamListener(
-        final ServerCall<Object[], Object> call, final Metadata headers, 
+        final ServerCall<Object[], Object> call, final Metadata headers,
         final Method method, final Object service) {
       super(call, headers, method, service);
     }
 
     @Override
     public void onCancel() {
-      
+
     }
 
     @Override
@@ -228,33 +232,33 @@ public class Server implements AutoCloseable {
       }
     }
   }
-  
+
   private abstract class BaseListener extends Listener<Object[]> {
-    
+
     protected final ServerCall<Object[], Object> call;
     protected final Method method;
     protected final Object service;
-    
+
     protected final Executor vExecutor;
-    
-    private final CompletionStage<Ctx> ctxFuture;
+
+    private final CompletionStage<RPCCtx> ctxFuture;
     private final CompletableFuture<Void> ready = new CompletableFuture<>(); // when halfClosed is received, then can send message
 
     private BaseListener(
-        final ServerCall<Object[], Object> call, final Metadata headers, 
+        final ServerCall<Object[], Object> call, final Metadata headers,
         final Method method, final Object service) {
       this.call = call;
       this.method = method;
       this.service = service;
-      
+
       vExecutor = VertxUtils.ctxExecutor(vertx);
 
       ctxFuture = ASync
         .sequentiallyGetSkipErrors(
           Utils.map(
-            authVerfiers.iterator(), 
-            authVerifier -> authVerifier.ctx(headers).thenApply(ctx -> ctx == Ctx.NULL ? null : ctx))) // nulls Ctx.NULL in order to proceed thurder
-        .thenApply(ctx -> ctx == null ? Ctx.NULL : ctx) // if null - set to Ctx.NULL
+            authVerfiers.iterator(),
+            authVerifier -> authVerifier.ctx(headers).thenApply(ctx -> ctx == RPCCtx.NULL ? null : ctx))) // nulls Ctx.NULL in order to proceed thurder
+        .thenApply(ctx -> ctx == null ? RPCCtx.NULL : ctx) // if null - set to Ctx.NULL
         .whenCompleteAsync((ctx, error) -> {
           if (error == null) {
             call.request(1); // data, otherwise neither message non half is received
@@ -275,7 +279,7 @@ public class Server implements AutoCloseable {
       call.sendHeaders(new Metadata());
       ready.complete(null);
     }
-    
+
     protected abstract void invoke(final Object[] args);
 
     protected void error(final Throwable t) {

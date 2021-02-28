@@ -11,6 +11,9 @@
   <artifactId>am24j.rpc</artifactId>
   <packaging>jar</packaging>
   
+  <name>RPC</name>
+  <description>RPC via means of gRPC and HTTP with Avro encoding</description>
+  
   <build>
     <plugins>
       <plugin>
@@ -48,7 +51,7 @@
     </dependency>    
     <dependency>
       <groupId>am24j</groupId>
-      <artifactId>am24j.runtime</artifactId>
+      <artifactId>am24j.vrt</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

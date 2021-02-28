@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,15 +21,20 @@ import org.junit.BeforeClass;
 
 import am24j.commons.Log4j2Config;
 import am24j.inject.Injector.Key;
+import am24j.inject.Starter;
 import am24j.rpc.BaseTest;
 import am24j.rpc.IService;
 import am24j.rpc.ServiceImpl;
 import am24j.rpc.grpc.GRPCTest.TestAuthVerfier;
-import am24j.rt.Starter;
 import am24j.rt.config.Config;
-import am24j.vertx.Instance;
 import am24j.vertx.NoCluster;
+import am24j.vertx.VertxInstance;
 
+/**
+ * Tests build using inversion of control (with DI) app composition
+ *
+ * @author avgustinmm
+ */
 public class GRPCIoCTest extends BaseTest {
 
   static {
@@ -42,10 +47,10 @@ public class GRPCIoCTest extends BaseTest {
   @BeforeClass
   public static void before() {
     sStarter = Starter.start(
-      Config.class,   
+      Config.class,
       // vertx
-      NoCluster.class,      
-      Instance.class,
+      NoCluster.class,
+      VertxInstance.class,
       // wite verfiers
       TestAuthVerfier.class,
       // service
@@ -53,10 +58,10 @@ public class GRPCIoCTest extends BaseTest {
       // gRPC server - wheb services are registered
       Server.class);
     cStarter = Starter.start(
-        Config.class,   
+        Config.class,
         // vertx
-        NoCluster.class,      
-        Instance.class);
+        NoCluster.class,
+        VertxInstance.class);
     service = cStarter.injector().<Client>getInstance(Key.of(Client.class)).service(() -> "user:pass", IService.class);
     try {
       Thread.sleep(2_000);
@@ -64,7 +69,7 @@ public class GRPCIoCTest extends BaseTest {
       e.printStackTrace();
     }
   }
-  
+
   @AfterClass
   public static void after() throws Exception {
     cStarter.close();

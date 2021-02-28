@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,6 +34,8 @@ import am24j.inject.annotation.Provides;
 import am24j.inject.spi.Interceptor;
 
 /**
+ * Provides implementation of some useful interceptors
+ *
  * @author avgustinmm
  */
 public class Interceptors {
@@ -43,71 +45,71 @@ public class Interceptors {
   public static Interceptor providesBinder() {
     return providesBinder(Provides.class);
   }
-  
+
   public static Interceptor providesBinder(final Class<? extends Annotation> providesAnnotqation) {
     return new ProvidesBinder(providesAnnotqation);
   }
-  
+
   public static AutoCloseableHandler autoCloseableHandler() {
     return new AutoCloseableHandler();
   }
-  
+
   public static class ProvidesBinder implements Interceptor  {
-    
+
     private final Class<? extends Annotation> providesAnnotqation;
-    
+
     protected ProvidesBinder(final Class<? extends Annotation> providesAnnotqation) {
       this.providesAnnotqation = providesAnnotqation;
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public Object handle(final Key key, final Optional<Point> point, final Object obj, final Injector injector) {
       if (obj != null) {
         // handles custom Provides annotation
         final Class<?> clazz = obj.getClass();
-        
+
         if (clazz.getAnnotation(providesAnnotqation) != null) {
           final Type providerType = Utils.providerType(clazz);
           if (providerType != null) {
             bindProvider(
               (Provider<Object>)obj,
-              Collections.singletonList(providerType), 
-              Utils.qualifiers(clazz.getAnnotations()), 
+              Collections.singletonList(providerType),
+              Utils.qualifiers(clazz.getAnnotations()),
               injector);
           }  // else warning
         }
-        
+
         for (final Field field : clazz.getDeclaredFields()) {
           if (field.getAnnotation(providesAnnotqation) != null) {
             bindProvider(
               provider(obj, field),
               Collections.singletonList(
-                field.getType() == Provider.class ? 
-                  ((ParameterizedType)field.getGenericType()).getActualTypeArguments()[0] : 
-                  field.getGenericType()), 
-              Utils.qualifiers(field.getAnnotations()), 
+                field.getType() == Provider.class ?
+                  ((ParameterizedType)field.getGenericType()).getActualTypeArguments()[0] :
+                  field.getGenericType()),
+              Utils.qualifiers(field.getAnnotations()),
               injector);
           }
         }
-        
+
         for (final Method method : clazz.getDeclaredMethods()) {
           if (method.getAnnotation(providesAnnotqation) != null) {
             bindProvider(
               provider(obj, method),
               Collections.singletonList(
-                method.getReturnType() == Provider.class ? 
-                  ((ParameterizedType)method.getGenericReturnType()).getActualTypeArguments()[0] : 
-                  method.getGenericReturnType()), 
-              Utils.qualifiers(method.getAnnotations()), 
+                method.getReturnType() == Provider.class ?
+                  ((ParameterizedType)method.getGenericReturnType()).getActualTypeArguments()[0] :
+                  method.getGenericReturnType()),
+              Utils.qualifiers(method.getAnnotations()),
               injector);
           }
         }
       }
-     
+
       return obj;
     }
-    
+
     @SuppressWarnings("unchecked")
     private static Provider<Object> provider(final Object obj, final Field field) {
       try { // if possible
@@ -124,7 +126,7 @@ public class Interceptors {
         throw InjectException.of(e);
       }
     }
-      
+
     @SuppressWarnings("unchecked")
     private static Provider<Object> provider(final Object obj, final Method method) {
       try { // if possible
@@ -140,6 +142,7 @@ public class Interceptors {
         }
       } else {
         return new Provider<Object>() {
+          @Override
           public Object get() {
             try {
               return method.invoke(obj);
@@ -154,7 +157,7 @@ public class Interceptors {
     }
 
     private static void bindProvider(
-        final Provider<Object> provider, 
+        final Provider<Object> provider,
         final List<Type> types, final List<Annotation> qualifiers,
         final Injector injector) {
       final List<Key> bindKeys = new ArrayList<>();
@@ -165,18 +168,18 @@ public class Interceptors {
           qualifiers.forEach(qualifier -> bindKeys.add(Key.of(type, qualifier)));
         }
       }
-      
+
       bindKeys.forEach(key -> injector.bind(key, provider));
     }
   }
-    
+
   // handle auto closeable
   public static class AutoCloseableHandler implements AutoCloseable, Interceptor {
 
     private final List<AutoCloseable> closeHandlers = Collections.synchronizedList(new ArrayList<>());
-    
+
     protected AutoCloseableHandler() {}
-    
+
     @Override
     public Object handle(final Key key, final Optional<Point> point, final Object obj, final Injector injector) {
       if (obj != null) {
@@ -186,7 +189,7 @@ public class Interceptors {
           }
         }
       }
-      
+
       return obj;
     }
 
@@ -205,7 +208,7 @@ public class Interceptors {
         }
       }
     }
-    
+
     @Override
     public String toString() {
       return "AutoCloseHandler: " + closeHandlers;
