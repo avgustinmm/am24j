@@ -24,10 +24,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import am24j.commons.Log4j2Config;
+import am24j.rpc.Auth;
 import am24j.rpc.AuthVerfier;
 import am24j.rpc.BaseTest;
 import am24j.rpc.IService;
-import am24j.rpc.RPCCtx;
 import am24j.rpc.ServiceImpl;
 import io.grpc.Metadata;
 import io.vertx.core.DeploymentOptions;
@@ -56,13 +56,7 @@ public class GRPCTest extends BaseTest {
 
     server = new Server(
       Collections.singletonList(new ServiceImpl()),
-      Collections.singletonList(new AuthVerfier<Metadata>() {
-
-        @Override
-        public CompletionStage<RPCCtx> ctx(final Metadata auth) { // add real check
-          return CompletableFuture.completedStage(RPCCtx.NULL);
-        }
-      }),
+      Collections.singletonList(new TestAuthVerfier()),
       new DeploymentOptions()
         .setConfig(
           new JsonObject()
@@ -95,8 +89,8 @@ public class GRPCTest extends BaseTest {
   public static class TestAuthVerfier implements AuthVerfier<Metadata> {
 
     @Override
-    public CompletionStage<RPCCtx> ctx(final Metadata auth) { // add real check
-      return CompletableFuture.completedStage(RPCCtx.NULL);
+    public CompletionStage<Auth> verify(final Metadata auth) { // add real check
+      return CompletableFuture.completedStage(Auth.ANONYMOUS);
     }
   }
 }

@@ -184,6 +184,16 @@ public class Resolvers {
               return true;
             }
           }
+        } else if (type instanceof Class) {
+          final Type superType = ((Class<?>)type).getGenericSuperclass();
+          if (isAssignableFrom(requiredType, superType)) {
+            return true;
+          }
+          for (final Type superInterface : ((Class<?>)type).getGenericInterfaces()) {
+            if (isAssignableFrom(requiredType, superInterface)) {
+              return true;
+            }
+          }
         }
       }
       return false;

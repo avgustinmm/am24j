@@ -51,17 +51,17 @@ public class GRPCIoCTest extends BaseTest {
       // vertx
       NoCluster.class,
       VertxInstance.class,
-      // wite verfiers
+      // wire verifiers
       TestAuthVerfier.class,
       // service
       ServiceImpl.class,
-      // gRPC server - wheb services are registered
+      // gRPC server - when services are registered
       Server.class);
     cStarter = Starter.start(
-        Config.class,
-        // vertx
-        NoCluster.class,
-        VertxInstance.class);
+      Config.class,
+      // vertx
+      NoCluster.class,
+      VertxInstance.class);
     service = cStarter.injector().<Client>getInstance(Key.of(Client.class)).service(() -> "user:pass", IService.class);
     try {
       Thread.sleep(2_000);

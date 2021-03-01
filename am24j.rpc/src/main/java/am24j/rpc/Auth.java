@@ -15,14 +15,18 @@
  */
 package am24j.rpc;
 
-import java.util.concurrent.CompletionStage;
+import am24j.commons.Ctx.RunAs;
 
 /**
- * Verifier for authentication. Checks and provides context.
+ * Base for all authorizations
  *
  * @author avgustinmm
  */
-public interface AuthVerfier<T> {
+public class Auth extends RunAs {
 
-  public CompletionStage<Auth> verify(final T auth);
+  public static final Auth ANONYMOUS = new Auth();
+
+  protected Auth() {
+    super(Auth.class);
+  }
 }

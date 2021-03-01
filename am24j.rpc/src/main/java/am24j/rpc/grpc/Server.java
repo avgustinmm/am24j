@@ -39,8 +39,8 @@ import am24j.commons.ASync;
 import am24j.commons.Ctx;
 import am24j.commons.Reflect;
 import am24j.commons.Utils;
+import am24j.rpc.Auth;
 import am24j.rpc.AuthVerfier;
-import am24j.rpc.RPCCtx;
 import am24j.rpc.RPCException;
 import am24j.rpc.Remote;
 import am24j.rpc.Service;
@@ -241,7 +241,7 @@ public class Server implements AutoCloseable {
 
     protected final Executor vExecutor;
 
-    private final CompletionStage<RPCCtx> ctxFuture;
+    private final CompletionStage<Auth> authFuture;
     private final CompletableFuture<Void> ready = new CompletableFuture<>(); // when halfClosed is received, then can send message
 
     private BaseListener(
@@ -253,25 +253,24 @@ public class Server implements AutoCloseable {
 
       vExecutor = VertxUtils.ctxExecutor(vertx);
 
-      ctxFuture = ASync
+      authFuture = ASync
         .sequentiallyGetSkipErrors(
           Utils.map(
             authVerfiers.iterator(),
-            authVerifier -> authVerifier.ctx(headers).thenApply(ctx -> ctx == RPCCtx.NULL ? null : ctx))) // nulls Ctx.NULL in order to proceed thurder
-        .thenApply(ctx -> ctx == null ? RPCCtx.NULL : ctx) // if null - set to Ctx.NULL
-        .whenCompleteAsync((ctx, error) -> {
-          if (error == null) {
+            authVerifier -> authVerifier.verify(headers)))
+        .whenCompleteAsync((auth, error) -> {
+          if (error == null && auth != null) {
             call.request(1); // data, otherwise neither message non half is received
           } else {
             call.close(Status.UNAUTHENTICATED, new Metadata());
           }
         }, vExecutor)
-        .thenCombine(ready, (ctx, v) -> ctx);
+        .thenCombine(ready, (auth, v) -> auth);
     }
 
     @Override
     public void onMessage(final Object[] args) {
-      ctxFuture.thenAccept(ctx -> ctx.runlAs(() -> invoke(args)));
+      authFuture.thenAccept(ctx -> ctx.runAs(() -> invoke(args)));
     }
 
     @Override

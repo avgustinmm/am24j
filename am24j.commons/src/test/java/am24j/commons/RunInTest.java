@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.rt;
+package am24j.commons;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import am24j.commons.Ctx;
 import am24j.commons.Ctx.RunAs;
 
 /**

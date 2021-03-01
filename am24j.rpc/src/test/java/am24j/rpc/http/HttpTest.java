@@ -24,10 +24,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import am24j.commons.Log4j2Config;
+import am24j.rpc.Auth;
 import am24j.rpc.AuthVerfier;
 import am24j.rpc.BaseTest;
 import am24j.rpc.IService;
-import am24j.rpc.RPCCtx;
 import am24j.rpc.ServiceImpl;
 import am24j.rpc.grpc.ServerVerticle;
 import am24j.vertx.http.Http;
@@ -94,8 +94,8 @@ public class HttpTest extends BaseTest {
   public static class TestAuthVerfier implements AuthVerfier<HttpServerRequest> {
 
     @Override
-    public CompletionStage<RPCCtx> ctx(final HttpServerRequest request) { // add real check
-      return CompletableFuture.completedStage(RPCCtx.NULL);
+    public CompletionStage<Auth> verify(final HttpServerRequest request) { // add real check
+      return CompletableFuture.completedStage(Auth.ANONYMOUS);
     }
   }
 }

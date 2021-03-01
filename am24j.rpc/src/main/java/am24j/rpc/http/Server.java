@@ -43,7 +43,6 @@ import am24j.commons.Ctx;
 import am24j.commons.Reflect;
 import am24j.commons.Utils;
 import am24j.rpc.AuthVerfier;
-import am24j.rpc.RPCCtx;
 import am24j.rpc.RPCException;
 import am24j.rpc.Remote;
 import am24j.rpc.Service;
@@ -105,9 +104,8 @@ public class Server implements Http.HttpHandler {
         .sequentiallyGetSkipErrors(
           Utils.map(
             authVerfiers.iterator(),
-            authVerifier -> authVerifier.ctx(requwst).thenApply(ctx -> ctx == RPCCtx.NULL ? null : ctx))) // nulls Ctx.NULL in order to proceed thurder
-        .thenApply(ctx -> ctx == null ? RPCCtx.NULL : ctx) // if null - set to Ctx.NULL
-        .whenCompleteAsync((ctx, error) -> {
+            authVerifier -> authVerifier.verify(requwst)))
+        .whenCompleteAsync((auth, error) -> {
           if (error == null) {
             final MethodHandler handler = methodsMap.get(requwst.uri());
             if (handler == null) {
@@ -116,7 +114,14 @@ public class Server implements Http.HttpHandler {
                 return null;
               });
             } else {
-              handler.handle(requwst, vExecutor);
+              if (auth == null) {
+                requwst.response().setStatusCode(403).write("Unauthorixed: " + requwst.uri() + "!", "plain/text").map(v -> {
+                  requwst.response().end();
+                  return null;
+                });
+              } else {
+                auth.runAs(() -> handler.handle(requwst, vExecutor));
+              }
             }
           } else {
             if (requwst.getHeader("Authorization") == null) {
