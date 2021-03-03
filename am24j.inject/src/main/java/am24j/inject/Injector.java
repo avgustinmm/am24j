@@ -440,7 +440,6 @@ public class Injector {
     return sb.toString();
   }
 
-  // TODO add test case for nullable injections
   private boolean nullable(final Annotation[] annotations) {
     for (final Annotation annotation : annotations) {
       for (final Class<?> nullableAnnotation : nullableAnnotations) {
