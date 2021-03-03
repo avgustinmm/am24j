@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.inject.Inject;
@@ -40,6 +41,7 @@ import javax.inject.Singleton;
 import org.slf4j.Logger;
 
 import am24j.commons.Ctx;
+import am24j.inject.annotation.Nullable;
 import am24j.inject.spi.Interceptor;
 import am24j.inject.spi.Resolver;
 
@@ -57,17 +59,27 @@ public class Injector {
   private final List<BindListener> bindListeners = new ArrayList<>();
 
   private final Map<Key, Provider<Object>> bindings = new HashMap<>();
+  private final Class<?>[] nullableAnnotations;
 
-  private Injector(final Logger log) {
+  private Injector(final Logger log, final Class<?>[] nullableAnnotations) {
     this.log = log == null ? Ctx.logger("Injector") : log;
+    this.nullableAnnotations = nullableAnnotations == null ? new Class<?>[] {Nullable.class} : nullableAnnotations;
   }
 
   public static Injector newInstance() {
-    return newInstance(null);
+    return newInstance((Logger)null);
+  }
+
+  public static Injector newInstance(final Class<? extends Annotation>[] nullableAnnotations) {
+    return newInstance(null, nullableAnnotations);
   }
 
   public static Injector newInstance(final Logger log) {
-    final Injector injector = new Injector(log);
+    return newInstance(log, null);
+  }
+
+  public static Injector newInstance(final Logger log, final Class<?>[] nullableAnnotations) {
+    final Injector injector = new Injector(log, nullableAnnotations);
     injector.bind(Key.of(Injector.class), injector);
     return injector;
   }
@@ -116,9 +128,20 @@ public class Injector {
   public Injector bind(final Key key, final Class<?> clazz) {
     log.info("Bind an class: {} -> {}", key, clazz);
     // TODO - check if no binding (configuration may allow overriding)
-    final Provider<Object> newProvider = getInstanceApplySingleton(Key.of(clazz), Optional.empty());
+    Provider<Object> newProvider;
+    try {
+      newProvider = getInstanceApplySingleton(Key.of(clazz), Optional.empty());
+    } catch (final InjectException e) {
+      if (nullable(clazz.getAnnotations())) {
+        newProvider = () -> null; // do not bind null values
+      } else {
+        throw e;
+      }
+    }
     bindings.put(key, newProvider);
-    bindListeners.forEach(bl -> bl.bound(key, newProvider, Injector.this));
+    for (final BindListener bindListener : bindListeners) {
+      bindListener.bound(key, newProvider, this);
+    }
     return this;
   }
 
@@ -142,18 +165,20 @@ public class Injector {
   @SuppressWarnings("unchecked")
   private <T> T getInstance(final Key key, final Optional<Point> point) {
     log.debug("[{}][{}] getIntance ...", key, point);
-    final Provider<T> provider;
+    Provider<T> provider;
     synchronized (bindings) { // compute if absent may fall in reqursive update
       final Provider<T> cached = (Provider<T>)bindings.get(key);
       if (cached == null) {
         provider = (Provider<T>)newProvider(key, point);
-        final Class<?> clazz = Utils.clazz(key.type());
-        final Type providerType = Utils.providerType(clazz);
-        if (providerType != null) {
-          // TODO - add test for: X implements Provider<Y> => add X as provider for Y
-          bindings.put(Key.of(providerType, key.qualifer().orElse(null)), (Provider<Object>)provider);
+        if (point.isEmpty()) {
+          final Class<?> clazz = Utils.clazz(key.type());
+          final Type providerType = Utils.providerType(clazz);
+          if (providerType != null) {
+            // TODO - add test for: X implements Provider<Y> => add X as provider for Y
+            bindings.put(Key.of(providerType, key.qualifer().orElse(null)), (Provider<Object>)provider);
+          }
+          bindings.put(key, (Provider<Object>)provider);
         }
-        bindings.put(key, (Provider<Object>)provider);
       } else {
         provider = cached;
       }
@@ -194,29 +219,29 @@ public class Injector {
   private Provider<Object> getInstanceApplySingleton(final Key key, final Optional<Point> point) {
     final Class<?> clazz = Utils.clazz(key.type());
     if (Provider.class.isAssignableFrom(clazz)) {
-      return intercapt(key, point, (Provider<Object>)getInstanceCheckCyclicDependencies(key, clazz));
+      return intercapt(key, point, (Provider<Object>)getInstanceCheckCyclicDependencies(key, clazz, point));
     } else if (clazz.getAnnotation(Singleton.class) == null) {
       log.trace("[{}][{}] not a singleton, get evety time", key, point);
-      return () -> intercapt(key, point, getInstanceCheckCyclicDependencies(key, clazz));
+      return () -> intercapt(key, point, getInstanceCheckCyclicDependencies(key, clazz, point));
     } else {
       log.trace("[{}][{}] singleton, create once", key, point);
       return new Provider<Object>() {
 
-        private boolean filled;
+        private boolean rezolved;
         private Object obj;
 
         @Override
         public synchronized Object get() {
-          if (!filled) {
-            obj = intercapt(key, point, getInstanceCheckCyclicDependencies(key, clazz));
-            filled = true;
+          if (!rezolved) {
+            obj = intercapt(key, point, getInstanceCheckCyclicDependencies(key, clazz, point));
+            rezolved = true;
           }
           return obj;
         }
       };
     }
   }
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "unlikely-arg-type" })
   private <T> T intercapt(final Key key, final Optional<Point> point, T obj) {
     log.trace("[{}][{}] go through interceptors ...", key, point);
     for (final Interceptor interceptor : interceptors) {
@@ -233,7 +258,7 @@ public class Injector {
   }
 
   private final List<Key> stack = new ArrayList<>();
-  private Object getInstanceCheckCyclicDependencies(final Key key, final Class<?> clazz) {
+  private Object getInstanceCheckCyclicDependencies(final Key key, final Class<?> clazz, final Optional<Point> point) {
     final int index = stack.indexOf(key);
     if (index == -1) {
       stack.add(key);
@@ -242,6 +267,12 @@ public class Injector {
           log.debug("[{}][{}] get instance, stack: {}", key, clazz.getName(), stack);
         }
         return createByJSR330(key, clazz);
+      } catch (final InjectException e) {
+        if (point.isPresent() && point.get().nullable()) {
+          return null; // do not bind null values
+        } else {
+          throw e;
+        }
       } finally {
         stack.remove(key); // TODO -check it's last
       }
@@ -276,8 +307,8 @@ public class Injector {
         for (int i = 0; i < args.length; i++) {
           final int iF = i;
           args[i] = getInstance(
-            Key.of(types[i], qualifier(paramAnnotations[i], () -> "consructor " + iConstr + " param " + iF)),
-            Optional.of(new Point(iConstr, i)));
+            Key.of(types[i], qualifier(paramAnnotations[i], () -> "constructor " + iConstr + " param " + iF)),
+            Optional.of(Point.of(iConstr, i, this::nullable)));
           if (args[i] != null && !paramTypes[i].isAssignableFrom(args[i].getClass())) {
             log.error("[{}][{}] Constructor {}'s parameter {} is of type {} but resolved object is of type {}!", key, clazz.getName(), iConstr, i, paramTypes[i], args[i].getClass());
             throw InjectException.of("Constructor " + iConstr + "'s param " + i + " is of type " + paramTypes[i] + " but resolved object is of type " + args[i].getClass().getName() + "!");
@@ -297,7 +328,7 @@ public class Injector {
       if (field.getAnnotation(Inject.class) != null) {
         final Object value = getInstance(
           Key.of(field.getGenericType(), qualifier(field.getAnnotations(), () -> "field " + field)),
-          Optional.of(new Point(field, obj)));
+          Optional.of(Point.of(field, obj, this::nullable)));
         if (value != null && !field.getType().isAssignableFrom(value.getClass())) {
           log.error("[{}][{}] Field {} is of type {} but resolved object is of type {}!", key, clazz.getName(), field, field.getType(), value.getClass());
           throw InjectException.of("Field " + field + " is of type " + field.getType() + " but resolved object is of type " + value.getClass().getName() + "!");
@@ -337,7 +368,7 @@ public class Injector {
                 final int iF = i;
                 args[i] = getInstance(
                   Key.of(types[i], qualifier(paramAnnotations[i], () -> "method " + method + " param " + iF)),
-                  Optional.of(new Point(method, obj, i)));
+                  Optional.of(Point.of(method, i, obj, this::nullable)));
                 if (args[i] != null && !paramTypes[i].isAssignableFrom(args[i].getClass())) {
                   log.error("[{}][{}] Method {}'s parameter {} is of type {} but resolved object is of type {}!", key, clazz.getName(), method, i, paramTypes[i], args[i].getClass());
                   throw InjectException.of("Method " + method + "'s param " + i + " is of type " + paramTypes[i] + " but resolved object is of type " + args[i].getClass().getName() + "!");
@@ -409,6 +440,18 @@ public class Injector {
     return sb.toString();
   }
 
+  // TODO add test case for nullable injections
+  private boolean nullable(final Annotation[] annotations) {
+    for (final Annotation annotation : annotations) {
+      for (final Class<?> nullableAnnotation : nullableAnnotations) {
+        if (nullableAnnotation.equals(annotation.annotationType())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   public static class Key {
 
     private final Type type;
@@ -461,21 +504,28 @@ public class Injector {
   public static class Point {
 
     private final Member member; // constructor, method or field
-    private final Object obj; // object to be injected if field or method injection
     private final int index; // index of parameter if the member is constructor or method
+    private final boolean nullable;
 
-    Point(final Member member, final Object obj, final int index) {
+    private final Object obj; // object to be injected if field or method injection
+
+    private Point(final Member member, final int index, final boolean nullable, final Object obj) {
       this.member = member;
-      this.obj = obj;
       this.index = index;
+      this.nullable = nullable;
+      this.obj = obj;
     }
 
-    <T> Point(final Constructor<T> constr, final int index) {
-      this(constr, null, index);
+    private static Point of(final Method method, final int index, final Object obj, final Function<Annotation[], Boolean> nullableTest) {
+      return new Point(method, index, nullableTest.apply(method.getParameterAnnotations()[index]), obj);
     }
 
-    Point(final Field field, final Object obj) {
-      this(field, obj, -1);
+    private static <T> Point of(final Constructor<T> constr, final int index, final Function<Annotation[], Boolean> nullableTest) {
+      return new Point(constr, index, nullableTest.apply(constr.getParameterAnnotations()[index]), null);
+    }
+
+    private static Point of(final Field field, final Object obj, final Function<Annotation[], Boolean> nullableTest) {
+      return new Point(field, -1, nullableTest.apply(field.getAnnotations()), obj);
     }
 
     public Object obj() {
@@ -490,7 +540,11 @@ public class Injector {
       return index;
     }
 
-    boolean isProvider() {
+    public boolean nullable() {
+      return nullable;
+    }
+
+    private boolean isProvider() {
       if (member instanceof Executable) {
         return ((Executable)member).getParameterTypes()[index] == Provider.class;
       } else {

@@ -13,21 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.vertx;
+package am24j.inject.annotation;
 
-import javax.inject.Provider;
-import javax.inject.Singleton;
-
-import io.vertx.core.spi.cluster.ClusterManager;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
+ * Defines an injection point as nullable
+ *
  * @author avgustinmm
  */
-@Singleton
-public class NoCluster implements Provider<ClusterManager> {
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Nullable {
 
-  @Override
-  public ClusterManager get() {
-    return null;
-  }
 }

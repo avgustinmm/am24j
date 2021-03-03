@@ -27,7 +27,6 @@ import am24j.rpc.IService;
 import am24j.rpc.ServiceImpl;
 import am24j.rpc.grpc.GRPCTest.TestAuthVerfier;
 import am24j.rt.config.Config;
-import am24j.vertx.NoCluster;
 import am24j.vertx.VertxInstance;
 
 /**
@@ -49,7 +48,6 @@ public class GRPCIoCTest extends BaseTest {
     sStarter = Starter.start(
       Config.class,
       // vertx
-      NoCluster.class,
       VertxInstance.class,
       // wire verifiers
       TestAuthVerfier.class,
@@ -60,7 +58,6 @@ public class GRPCIoCTest extends BaseTest {
     cStarter = Starter.start(
       Config.class,
       // vertx
-      NoCluster.class,
       VertxInstance.class);
     service = cStarter.injector().<Client>getInstance(Key.of(Client.class)).service(() -> "user:pass", IService.class);
     try {
