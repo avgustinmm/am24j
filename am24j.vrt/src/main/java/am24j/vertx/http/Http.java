@@ -48,7 +48,7 @@ public class Http extends Component<Verticle> {
 
   @Inject
   public Http(final List<HttpHandler> handlers, @Named("http_server.json") final DeploymentOptions options, final Vertx vertx) {
-    super(new AbstractVerticle() {
+    super(() -> new AbstractVerticle() {
 
       private HttpServer server;
 

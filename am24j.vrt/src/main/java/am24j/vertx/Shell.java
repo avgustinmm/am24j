@@ -29,6 +29,8 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.shell.ShellVerticle;
 
 /**
+ * Supports only single instance (not needed more than this
+ *
  * @author avgustinmm
  */
 @Singleton

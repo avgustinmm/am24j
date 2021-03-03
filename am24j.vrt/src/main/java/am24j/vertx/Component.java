@@ -19,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 
@@ -28,7 +29,6 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 
-// TODO - this way if self-deployable verticles doesn't support multiple instances
 /**
  * @author avgustinmm
  */
@@ -39,11 +39,17 @@ public abstract class Component<T extends Verticle> implements AutoCloseable {
   private final Vertx vertx;
   private final String deploymentID;
 
+  // supports only single instance!
   protected Component(final T verticle, final DeploymentOptions options, final Vertx vertx) {
+    this(() -> verticle, options, vertx);
+  }
+
+  @SuppressWarnings("unchecked")
+  protected Component(final Supplier<T> verticle, final DeploymentOptions options, final Vertx vertx) {
     LOG.info("Deploying {} (options: {}, vertx: {})", verticle, options.toJson().encodePrettily(), vertx);
     this.vertx = vertx;
     final CompletableFuture<String> future = new CompletableFuture<>();
-    vertx.deployVerticle(verticle, options).onComplete(ar -> {
+    vertx.deployVerticle((Supplier<Verticle>)verticle, options).onComplete(ar -> {
       if (ar.succeeded()) {
         future.complete(ar.result());
       } else {

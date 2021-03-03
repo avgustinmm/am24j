@@ -2,5 +2,8 @@
   "config": {
     "host": "localhost",
     "port": 1000
-  }
+  },
+  "instances": 2,
+  "worker": false,
+  "workerPoolSize": 10
 }

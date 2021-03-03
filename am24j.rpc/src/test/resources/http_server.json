@@ -4,7 +4,7 @@
     "host": "localhost",
     "port": 1080
   },
-  "instances": 1,
+  "instances": 2,
   "worker": false,
   "workerPoolSize": 10
 }
