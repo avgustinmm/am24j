@@ -38,7 +38,7 @@ Starter.start(
   Server.class); 
 ```
 ### Run example
-Example is ajar, exanple-app.jar which pack its dependencies as sub-jars, with Main-Class am24j.launch.Launcher which is instructed (with argunments_ 
+Example is ajar, exanple-app.jar which pack its dependencies as sub-jars, with Main-Class am24j.launch.Launcher which is instructed (with argunments, 
 to start / launch application class am24j.example.App.
 
 To start examole get the built artifact example-app.jar and start it with:
