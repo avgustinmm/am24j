@@ -29,8 +29,9 @@ Launcher is a utility that allows to:
 * Launcher start one or more application main classes (classes with main method) in different threads (in parallel). These classes are passed as arguments of _am24j.launch.Launcher_'s main method
 <br/>
 An application packed as jar (with Launcher) could be started with:
+
 ```
-java -jar <application jar> <main class> [<other main classes]*
+java -jar <application jar> <main class> [other main classes]
 ```
 
 Steps to use it:
@@ -49,8 +50,8 @@ Then you may access plain HTTP handlers and JAX-RS urls that are printed on the 
 Injector is a simple implementation of Dependency Injector following concepts of JSR-330. Nevertheless its simplicity it provides powerful pluggable framework that allows to be highly customized.<br/>
 #### Pluggins
 The main plugggable entities are resolvers and interceptors.
-* Resolvers may contribute for resolving objects 
-* Interceptors are notified for already resolved objects and have chance to transform them. They may, for instance, collect _java.lang.AutoCloseable_ objects and close them on application end.
+* _am24j.inject.spi.Resolver_ - may contribute for resolving objects 
+* _am24j.inject.spi.Interceptor_ - are notified for already resolved objects and have chance to transform them. They may, for instance, collect _java.lang.AutoCloseable_ objects and close them on application end.
 #### Annotations
 Injector specifies some annotations that annotated some concepts:
 * _am24j.inject.annotation.ImplementedBy_ - defines implementation of an interfaces
