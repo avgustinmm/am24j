@@ -66,13 +66,13 @@ Then you may access plain HTTP handlers and JAX-RS urls that are printed on the 
 Injector is a simple implementation of Dependency Injector following concepts of JSR-330. 
 Nevertheless, its simplicity it provides powerful pluggable framework that allows to be highly 
 customized.<br/>
-###### Pluggins
+##### Pluggins
 The main plugggable entities are resolvers and interceptors.
 * _am24j.inject.spi.Resolver_ - may contribute for resolving objects 
 * _am24j.inject.spi.Interceptor_ - are notified for already resolved objects and have chance to 
 transform them. They may, for instance, collect _java.lang.AutoCloseable_ objects and close 
 them on application end.
-###### Annotations
+##### Annotations
 Injector specifies some annotations that annotated some concepts:
 * _am24j.inject.annotation.ImplementedBy_ - defines implementation of an interfaces
 * _am24j.inject.annotation.Provides_ - marks method, field or class as a provider of a type
@@ -112,7 +112,7 @@ which will close all auto closeables created by Injector, implicitly created by 
 #### Avro Encoding
 This module provides beans and primitive /simple types encoding with Avro.
 Beans, in terms of this module, are java classes that follow the following patterns:
-###### Standard bean
+##### Standard bean
 , having getters and setters, e.g.:
 ```java 
 class StandardBean {
@@ -125,7 +125,7 @@ class StandardBean {
 }
 ```
 The properties in the example above ire _xyz_ and  _xyzFluebt_ (first letter down cased).
-###### Optimized bean
+##### Optimized bean
 , having getters and setters but omitting _get/set_, e.g.:
 ```java 
 class OptimizedBean {
@@ -138,7 +138,7 @@ class OptimizedBean {
 }
 ```
 The properties in the example above ire _xyz_ and  _xyzFluebt_ 
-###### Buildable
+##### Buildable
 , having builder e.g.:
 ```java 
 class Buildable {
@@ -172,7 +172,7 @@ used in encryption.
 #### RPC
 RPC framework allows to define service interface(s), their implementations and to expose them via 
 gRPC or HTTP with Avro based encoding. It allows (at the moment) unary calls and server streaming.
-###### Service interface
+##### Service interface
 Service interface is a Java interface that complies with some requirements
 1. It is annotated with am24j.rpc.Service 
 1. Unary methods return parameterized _java.util.concurrent.CompletionStage_ or 
