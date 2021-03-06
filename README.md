@@ -27,7 +27,7 @@ Launcher is a utility that allows to:
 * pack a whole application and its dependencies in single jar with dependencies being packed as sub-jars (not need to be unpacked). This allows easy observing of dependencies, versions and do  not mix them.
 * the Launcher takes care to provide the sub-jars content ot the java class loader
 * Launcher start one or more application main classes (classes with main method) in different threads (in parallel). These classes are passed as arguments of _am24j.launch.Launcher_'s main method
-<br/>
+
 An application packed as jar (with Launcher) could be started with:
 
 ```
@@ -91,4 +91,5 @@ Service interface is a Java interface that complies with some requirements
 1. Server streaming methods are void (i.e. return _void_ or _java.lang.Void_) and their last argument is a parameterized _java.util.concurrent.Flow.Subscriber_
 1. Other (but server streaming last parameter) parameter types shall be compatible with the Avro Encoding (in general primitive / simple types or beans)
 1. If gRPC or HTTP server should be resolved by Injector (not constructed explicitly) the implementations of service must be annotated with _am24j.rpc.Remote_
+
 The exanple for Starter above shows how, for instance a RPC server may be bootstrapped. For more in detail use of RPC may take a look at RPC tests.
