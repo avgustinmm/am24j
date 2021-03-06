@@ -1,3 +1,5 @@
+# AM24j
+
 ### Overview
 **am24j** project aim is to provide basic utilities and framework that could help application developers to start their rich feature projects 
 (including micro-services) having already ready for use base.
@@ -11,7 +13,7 @@ and system properties), resource access (files and class path) and so on.
 provides the application with access to the classes and resources of the embedded dependency jars.
 * **Injector** - simple but highly pluggable injector. It provides means for composing an application from its components in declarative (inversion of control) way.
 Also provides a simple Starter that could be used for fast composition of application.
-* **Avro**  Encoding - defines bean abstraction and encoding (powered by Avro) for such beans. 
+* **Avro Encoding** - defines bean abstraction and encoding (powered by Avro) for such beans. 
 #### Application framework
 * **Vertx runtime** - components that could be used for composing a Vertx bases rich application having - cluster (powered by Hazelcast), Http pluggins, JAX-RS support 
 (powered by RestEasy), components (self deployable verticles), injectable json based configuration.
@@ -81,6 +83,62 @@ Then, at the end of the live of the starter you may call:
 starter.close();
 ```
 which will close all auto closeables created by Injector, implicitly created by Starter.
+
+### Avro Encoding
+This module provides beans and primitive /simple types encoding with Avro.
+Beans, in terms of this module, are java classes that follow the following patterns:
+#### Standard bean
+, having getters and setters, e.g.:
+```java 
+class StandardBean {
+  
+  void setXyz(int xyz) { ... }   
+  int getXyz() { ...}  
+  // setter may return StandardBean in order to provide fluent build API
+  StandardBean setXyzFluent(int hyzDluebt) { ... }  
+  int getXyzFluent() { ...}
+}
+```
+The properties in the example above ire _xyz_ and  _xyzFluebt_ (first letter down cased).
+#### Optimized bean
+, having getters and setters but omitting _get/set_, e.g.:
+```java 
+class OptimizedBean {
+  
+  void xyz(int xyz) { ... }
+  int xyz() { ... }
+  // setter may return OptimizedBean in order to provide fluent build API
+  OptimizedBean xyzFluent(int hyzDluebt) { ... }
+  int xyzFluent() { ...}
+}
+```
+The properties in the example above ire _xyz_ and  _xyzFluebt_ 
+#### Buildable
+, having builder e.g.:
+```java 
+class Buildable {
+
+  // static builder method must be named builder or newBuilder
+  static Builder builder() { 
+    return new Builder();
+  }
+
+  int xyz() { ...}
+  int zyzFluent() { ...}
+    
+  static class Builder {
+  
+    void xyz(int xyz) { ... } 
+    // setter may return Builder in order to provide fluent build API
+    Builder xyzFluent(int hyzDluebt) { ... }
+    
+    // Builder must have no argument build method returning buildable object
+    Buildable build() { ... }
+  }
+}
+```
+The properties in the example above ire _xyz_ and  _xyzFluebt_. Not that getters of setters may follow standard or optimized bean pattern (the example above follows optimized).
+
 
 ### RPC
 RPC framework allows to define service interface(s), their implementations and to expose them via 
