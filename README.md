@@ -174,7 +174,7 @@ RPC framework allows to define service interface(s), their implementations and t
 gRPC or HTTP with Avro based encoding. It allows (at the moment) unary calls and server streaming.
 ##### Service interface
 Service interface is a Java interface that complies with some requirements
-1. It is annotated with am24j.rpc.Service 
+1. It is annotated with _am24j.rpc.Service_
 1. Unary methods return parameterized _java.util.concurrent.CompletionStage_ or 
 _java.util.concurrent.CompletableFuture_ 
 1. Server streaming methods are void (i.e. return _void_ or _java.lang.Void_) and 
