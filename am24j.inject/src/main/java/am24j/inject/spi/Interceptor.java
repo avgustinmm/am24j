@@ -22,7 +22,8 @@ import am24j.inject.Injector.Key;
 import am24j.inject.Injector.Point;
 
 /**
- * Intercepts injections without having impact on it
+ * Intercepts injections possibly transforming it.<br/>
+ * Note: if implementation is also a {@link Resolver} it shall not transform it. The change, if such, won't be taken in account!
  *
  * @author avgustinmm
  */
