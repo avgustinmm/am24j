@@ -19,7 +19,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import am24j.vertx.http.Http;
-import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerRequest;
 
 /**
@@ -37,7 +36,7 @@ public class HelloWorld implements Http.HttpHandler {
   }
 
   @Override
-  public Handler<HttpServerRequest> handler() {
-    return handler -> handler.response().setStatusCode(200).end("Hellow World!");
+  public void handle(final HttpServerRequest request) {
+    request.response().setStatusCode(200).end("Hellow World!");
   }
 }

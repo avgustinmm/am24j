@@ -50,7 +50,6 @@ import am24j.rpc.avro.Proto;
 import am24j.vertx.VertxUtils;
 import am24j.vertx.http.Http;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
@@ -96,42 +95,40 @@ public class Server implements Http.HttpHandler {
   }
 
   @Override
-  public Handler<HttpServerRequest> handler() {
-    return requwst -> {
-      final Executor vExecutor = VertxUtils.ctxExecutor(vertx);
-      requwst.pause(); // otherwise ? mark as read ?
-      ASync
-        .sequentiallyGetSkipErrors(
-          Utils.map(
-            authVerfiers.iterator(),
-            authVerifier -> authVerifier.verify(requwst)))
-        .whenCompleteAsync((auth, error) -> {
-          if (error == null) {
-            final MethodHandler handler = methodsMap.get(requwst.uri());
-            if (handler == null) {
-              requwst.response().setStatusCode(404).write("Not found: " + requwst.uri() + "!", "plain/text").map(v -> {
-                requwst.response().end();
+  public void handle(final HttpServerRequest request) {
+    final Executor vExecutor = VertxUtils.ctxExecutor(vertx);
+    request.pause(); // otherwise ? mark as read ?
+    ASync
+      .sequentiallyGetSkipErrors(
+        Utils.map(
+          authVerfiers.iterator(),
+          authVerifier -> authVerifier.verify(request)))
+      .whenCompleteAsync((auth, error) -> {
+        if (error == null) {
+          final MethodHandler handler = methodsMap.get(request.uri());
+          if (handler == null) {
+            request.response().setStatusCode(404).write("Not found: " + request.uri() + "!", "plain/text").map(v -> {
+              request.response().end();
+              return null;
+            });
+          } else {
+            if (auth == null) {
+              request.response().setStatusCode(403).write("Unauthorixed: " + request.uri() + "!", "plain/text").map(v -> {
+                request.response().end();
                 return null;
               });
             } else {
-              if (auth == null) {
-                requwst.response().setStatusCode(403).write("Unauthorixed: " + requwst.uri() + "!", "plain/text").map(v -> {
-                  requwst.response().end();
-                  return null;
-                });
-              } else {
-                auth.runAs(() -> handler.handle(requwst, vExecutor));
-              }
-            }
-          } else {
-            if (requwst.getHeader("Authorization") == null) {
-              requwst.response().putHeader("WWW-Authenticate:", authVerfiers.get(0).toString()).setStatusCode(401).end();
-            } else {
-              requwst.response().setStatusCode(403).end();
+              auth.runAs(() -> handler.handle(request, vExecutor));
             }
           }
-        }, vExecutor);
-    };
+        } else {
+          if (request.getHeader("Authorization") == null) {
+            request.response().putHeader("WWW-Authenticate:", authVerfiers.get(0).toString()).setStatusCode(401).end();
+          } else {
+            request.response().setStatusCode(403).end();
+          }
+        }
+      }, vExecutor);
   }
 
   private Stream<MethodHandler> methodDescriptors(final Object service) {
@@ -168,22 +165,22 @@ public class Server implements Http.HttpHandler {
       stream = Proto.isStream(method);
     }
 
-    private Future<Void> handle(final HttpServerRequest requwst, final Executor vExecutor) {
-      final boolean json = !"avro/binary".equals(requwst.getHeader("content-type"));
-      return handle0(requwst, json, vExecutor).recover(t -> {
+    private Future<Void> handle(final HttpServerRequest request, final Executor vExecutor) {
+      final boolean json = !"avro/binary".equals(request.getHeader("content-type"));
+      return handle0(request, json, vExecutor).recover(t -> {
         final String uuid = RPCException.uuid();
         LOG.error("[{}] Call feiled!", t);
         am24j.rpc.avro.RPCException rpcExc = new am24j.rpc.avro.RPCException().setUUID(uuid).setMessage(t.getMessage()).setType(t.getClass().getName());
         final String jsonTesp = stream(rpcExc, json);
-        return respond(requwst.response(), 500, json, jsonTesp);
+        return respond(request.response(), 500, json, jsonTesp);
       });
     }
-    private Future<Void> handle0(final HttpServerRequest requwst, final boolean json, final Executor vExecutor) {
+    private Future<Void> handle0(final HttpServerRequest request, final boolean json, final Executor vExecutor) {
       try {
         if (stream) {
-          return parse(requwst, json).compose(args -> stream(args, requwst.response(), json, vExecutor));
+          return parse(request, json).compose(args -> stream(args, request.response(), json, vExecutor));
         } else {
-          return parse(requwst, json).compose(args -> call(args, requwst, json, vExecutor));
+          return parse(request, json).compose(args -> call(args, request, json, vExecutor));
         }
       } catch (final Throwable t) {
         return Future.failedFuture(t);
@@ -195,18 +192,18 @@ public class Server implements Http.HttpHandler {
     }
 
     @SuppressWarnings("unchecked")
-    private Future<Void> call(final Object[] args, final HttpServerRequest requwst, final boolean json, final Executor vExecutor) {
+    private Future<Void> call(final Object[] args, final HttpServerRequest request, final boolean json, final Executor vExecutor) {
       final Promise<Void> promise = Promise.promise();
       try {
         ((CompletionStage<Object>)method.invoke(service, args)).whenCompleteAsync((resp, error) -> {
           try {
             if (error == null) {
               final String jsonTesp = stream(resp, json);
-              respond(requwst.response(), jsonTesp.length() == 0 ? 204 : 200, json, jsonTesp).onComplete(promise);
+              respond(request.response(), jsonTesp.length() == 0 ? 204 : 200, json, jsonTesp).onComplete(promise);
             } else {
               final String uuid = RPCException.uuid();
               final String jsonTesp = stream(new am24j.rpc.avro.RPCException().setUUID(uuid).setMessage(error.getMessage()).setType(error.getClass().getName()), json);
-              respond(requwst.response(), 500, json, jsonTesp).onComplete(promise);
+              respond(request.response(), 500, json, jsonTesp).onComplete(promise);
             }
           } catch (final Throwable t) {
             promise.fail(t);
@@ -271,11 +268,11 @@ public class Server implements Http.HttpHandler {
       return promise.future();
     }
 
-    private Future<Object[]> parse(final HttpServerRequest requwst, final boolean json) {
-      final String contentLength = requwst.getHeader("content-length");
+    private Future<Object[]> parse(final HttpServerRequest request, final boolean json) {
+      final String contentLength = request.getHeader("content-length");
       LOG.debug("Received: {}", contentLength);
-      requwst.resume();
-      return requwst.body().map(body -> {
+      request.resume();
+      return request.body().map(body -> {
         LOG.debug("Request body: {}", body);
         return body;
       }).map(body -> Proto.decodeReq(aMessage.getRequest(), new ByteArrayInputStream(body.getBytes()), json));

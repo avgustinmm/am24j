@@ -73,8 +73,8 @@ public class RestEasy implements HttpHandler, AutoCloseable {
   }
 
   @Override
-  public Handler<HttpServerRequest> handler() {
-    return handler;
+  public void handle(final HttpServerRequest request) {
+    handler.handle(request);
   }
 
   @Override

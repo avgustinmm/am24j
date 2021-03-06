@@ -57,7 +57,7 @@ public class Http extends Component<Verticle> {
         LOG.info("Start with handlers: {}", handlers);
 
         final Router router = Router.router(vertx);
-        handlers.forEach(handler -> router.route(handler.path()).handler(routingContext -> handler.handler().handle(routingContext.request())));
+        handlers.forEach(handler -> router.route(handler.path()).handler(routingContext -> handler.handle(routingContext.request())));
 
         server = vertx.createHttpServer(new HttpServerOptions(config()));
         server.requestHandler(router);
@@ -71,9 +71,8 @@ public class Http extends Component<Verticle> {
     }, options, vertx);
   }
 
-  public interface HttpHandler {
+  public interface HttpHandler extends Handler<HttpServerRequest> {
 
     public String path();
-    public Handler<HttpServerRequest> handler();
   }
 }
