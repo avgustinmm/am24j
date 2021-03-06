@@ -37,15 +37,15 @@ public class RPCException extends RuntimeException implements IndexedRecord {
     final FieldAssembler<Schema> fAssembler = rTypeBuilder.fields();
     fAssembler
       .name("uuid")
-      .type(Avro.forTypeNullable(String.class))
+      .type(Avro.forClassNullable(String.class))
       .noDefault();
     fAssembler
       .name("message")
-      .type(Avro.forTypeNullable(String.class))
+      .type(Avro.forClassNullable(String.class))
       .noDefault();
     fAssembler
       .name("realExcClass")
-      .type(Avro.forTypeNullable(String.class))
+      .type(Avro.forClassNullable(String.class))
       .noDefault();
     RPC_EXCEPTION_SCHEMA = fAssembler.endRecord();
   }

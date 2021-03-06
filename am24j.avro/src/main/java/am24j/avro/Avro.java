@@ -64,7 +64,7 @@ public class Avro {
     return forType(type, new Stack<Type>());
   }
 
-  public static Schema forTypeNullable(final Class<?> clazz) {
+  public static Schema forClassNullable(final Class<?> clazz) {
     return forTypeNullable((Type)clazz);
   }
 
