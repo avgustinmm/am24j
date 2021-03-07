@@ -4,6 +4,10 @@
 **am24j** project aim is to provide basic utilities and framework that could help application  developers to start their rich feature projects 
 (including micro-services) having already ready for use base.
 
+### Status
+The project is still unstable and in preparation / development of its first release. You're welcome to check features and play with libraries. 
+For any bugs or feature requests please create issues. Any feedback is highly appreciated.
+
 ### Modules
 They could be classified as follows:
 #### Basic utilities
