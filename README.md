@@ -60,7 +60,7 @@ To run examole get the built artifact _example-app.jar_ and start it with:
 ```
 java -jar example-app.jar am24j.example.Server
 ```
-Then you may access direct HTTP handlers and JAX-RS urls that are printed on the console (_http://localhost/direct/hello\[?name=&lt;name&gt;\]_ or _http://localhost/jaxrs/hello\[?name=&lt;name&gt;\]_), or start the same jar with different main class which makes request to a RPC service via gRPC:
+Then you may access direct HTTP handlers and JAX-RS urls that are printed on the console (`http://localhost/direct/hello[?name=<name>]` or `http://localhost/jaxrs/hello[?name=<name>]`), or start the same jar with different main class which makes request to a RPC service via gRPC:
 ```
 java -jar example-app.jar am24j.example.Client
 ```
