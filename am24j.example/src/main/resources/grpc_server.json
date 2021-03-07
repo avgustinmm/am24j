@@ -1,8 +1,7 @@
 {
   "config": {
-    "ssl": false,
     "host": "localhost",
-    "port": 80
+    "port": 1080
   },
   "instances": 2,
   "worker": false,

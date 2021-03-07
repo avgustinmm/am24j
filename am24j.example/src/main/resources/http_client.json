@@ -1,0 +1,6 @@
+{
+  "ssl": false,
+  "defaultHost": "localhost",
+  "defaultPort": 80,
+  "connectTimeout": 30000    
+}

@@ -58,9 +58,12 @@ pack its dependencies as sub-jars, with _Main-Class am24j.launch.Launcher_ which
 instructed (with argunments, to start / launch application class _am24j.example.App_.<br/>
 To run examole get the built artifact _example-app.jar_ and start it with:
 ```
-java -jar example-app.jar am24j.example.App
+java -jar example-app.jar am24j.example.Server
 ```
-Then you may access plain HTTP handlers and JAX-RS urls that are printed on the console.
+Then you may access direct HTTP handlers and JAX-RS urls that are printed on the console (_http://localhost/direct/hello\[?name=&lt;name&gt;\]_ or _http://localhost/jaxrs/hello\[?name=&lt;name&gt;\]_), or start the same jar with different main class which makes request to a RPC service via gRPC:
+```
+java -jar example-app.jar am24j.example.Client
+```
 
 #### Injector
 Injector is a simple implementation of Dependency Injector following concepts of JSR-330. 

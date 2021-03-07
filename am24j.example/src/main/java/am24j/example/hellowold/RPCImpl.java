@@ -13,25 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.example.services;
+package am24j.example.hellowold;
 
-import javax.inject.Singleton;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
-import am24j.vertx.http.RestEasy.JAXRS;
+import am24j.rpc.Remote;
 
-/**
- * @author avgustinmm
- */
-@Singleton
-@JAXRS
-@Path("/1")
-public class JAXRS1 {
+@Remote
+public class RPCImpl implements RPCInterface {
 
-  @GET
-  @Path("hello")
-  public String hello2() {
-    return "Hello World (JAX RS - 1)!";
+  @Override
+  public CompletionStage<String> hello(final String name) {
+    return CompletableFuture.completedStage("Hello " + (name == null || name.trim().length() == 0 ? "World" : name) + "! (by RPC)");
   }
 }

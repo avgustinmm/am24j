@@ -35,7 +35,7 @@ import io.grpc.MethodDescriptor.MethodType;
  *
  * @author avgustinmm
  */
-class Common {
+public class Common {
 
   public static final Key<String> WWW_AUTHENTICATE = Key.of("WWW-Authenticate", Metadata.ASCII_STRING_MARSHALLER);
 

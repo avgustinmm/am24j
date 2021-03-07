@@ -77,7 +77,7 @@ public class Server implements Http.HttpHandler {
       @Remote final List<Object> services,
       final List<AuthVerfier<HttpServerRequest>> authVerfiers,
       final Vertx vertx) {
-    LOG.info("Star (servicesL {})", services);
+    LOG.info("Start (services: {})", services);
     this.authVerfiers = authVerfiers;
     this.vertx = vertx;
     methodsMap =

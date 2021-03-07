@@ -13,25 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.example.services;
+package am24j.example.hellowold;
 
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
 
 import am24j.vertx.http.RestEasy.JAXRS;
 
 /**
+ * Path to JAX-RS is under /jaxrs
+ *
  * @author avgustinmm
  */
 @Singleton
-@Path("/2")
 @JAXRS
-public class JAXRS2 {
+@Path("/")
+public class JaxRS {
 
   @GET
-  @Path("/hello")
-  public String hello() {
-    return "Hello World (JAX RS - 2)!";
+  @Path("hello")
+  public String hello(@QueryParam("name") final String name) {
+    return "Hello " + (name == null || name.trim().length() == 0 ? "World" : name) + "! (by JAX-RS)";
   }
 }

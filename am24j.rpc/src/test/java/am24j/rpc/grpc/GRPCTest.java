@@ -71,11 +71,6 @@ public class GRPCTest extends BaseTest {
             .put(ClientVerticle.PORT,  1000)),
         cVertx);
     service = client.service(() -> "user:pass", IService.class);
-    try {
-      Thread.sleep(2_000);
-    } catch (final InterruptedException e) {
-      e.printStackTrace();
-    }
   }
 
   @AfterClass

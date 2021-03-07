@@ -136,7 +136,7 @@ public class Proto {
     final Service serviceAnn = iClass.getAnnotation(Service.class);
     if (serviceAnn != null) {
       serviceName =
-        (serviceAnn == null || serviceAnn.serviceName().length() == 0 ? iClass.getName() : serviceAnn.serviceName()) +
+        (serviceAnn == null || serviceAnn.name().length() == 0 ? iClass.getName() : serviceAnn.name()) +
         (serviceAnn == null || serviceAnn.version().length() == 0 ? "" : '_'+ serviceAnn.version());
     }
     final int index = serviceName.lastIndexOf('.');

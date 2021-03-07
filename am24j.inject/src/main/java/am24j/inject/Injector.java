@@ -164,7 +164,7 @@ public class Injector {
 
   @SuppressWarnings("unchecked")
   private <T> T getInstance(final Key key, final Optional<Point> point) {
-    log.debug("[{}][{}] getIntance ...", key, point);
+    log.debug("[{}][{}] getInstance ...", key, point);
     Provider<T> provider;
     synchronized (bindings) { // compute if absent may fall in reqursive update
       final Provider<T> cached = (Provider<T>)bindings.get(key);
@@ -225,20 +225,8 @@ public class Injector {
       return () -> intercapt(key, point, getInstanceCheckCyclicDependencies(key, clazz, point));
     } else {
       log.trace("[{}][{}] singleton, create once", key, point);
-      return new Provider<Object>() {
-
-        private boolean rezolved;
-        private Object obj;
-
-        @Override
-        public synchronized Object get() {
-          if (!rezolved) {
-            obj = intercapt(key, point, getInstanceCheckCyclicDependencies(key, clazz, point));
-            rezolved = true;
-          }
-          return obj;
-        }
-      };
+      final Object singleton = intercapt(key, point, getInstanceCheckCyclicDependencies(key, clazz, point));
+      return () -> singleton;
     }
   }
   @SuppressWarnings({ "unchecked", "unlikely-arg-type" })
@@ -541,6 +529,11 @@ public class Injector {
 
     public boolean nullable() {
       return nullable;
+    }
+
+    @Override
+    public String toString() {
+      return member.toString() + "[" + index + "]" + (nullable ? " nullable" : "");
     }
 
     private boolean isProvider() {

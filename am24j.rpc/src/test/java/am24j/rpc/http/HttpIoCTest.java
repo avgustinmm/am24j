@@ -62,11 +62,6 @@ public class HttpIoCTest extends BaseTest {
       // vertx
       VertxInstance.class);
     service = cStarter.injector().<Client>getInstance(Key.of(Client.class)).service(() -> "user:pass", IService.class);
-    try {
-      Thread.sleep(2_000);
-    } catch (final InterruptedException e) {
-      e.printStackTrace();
-    }
   }
 
   @AfterClass

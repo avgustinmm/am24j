@@ -76,11 +76,6 @@ public class HttpTest extends BaseTest {
             .put(ServerVerticle.HOST, "localhost")
             .put(ServerVerticle.PORT, 1081)),
         sVertx);
-    try {
-      Thread.sleep(2_000);
-    } catch (final InterruptedException e) {
-      e.printStackTrace();
-    }
   }
 
   @AfterClass

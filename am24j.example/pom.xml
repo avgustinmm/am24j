@@ -56,5 +56,10 @@
       <artifactId>am24j.vrt</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>am24j</groupId>
+      <artifactId>am24j.rpc</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 </project>

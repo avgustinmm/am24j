@@ -13,24 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.rpc;
+package am24j.example.hellowold;
 
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Flow.Subscriber;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import am24j.vertx.http.Http;
+import io.vertx.core.http.HttpServerRequest;
 
 /**
- * Test service
- *
  * @author avgustinmm
  */
-@Service(name = "test", version = "0.0")
-public interface IService {
+@Singleton
+public class DirectHttp implements Http.HttpHandler {
 
-  public CompletionStage<Void> voidCall();
+  @Inject
+  public DirectHttp() {}
 
-  public CompletionStage<String> getCall(final int i, final String str);
+  @Override
+  public String path() {
+    return "/direct/hello";
+  }
 
-  public CompletionStage<String> throwExc(final boolean completeExceptionally);
-
-  public void stream(final int i, final Subscriber<String> subscriber);
+  @Override
+  public void handle(final HttpServerRequest request) {
+    final String name = request.getParam("name");
+    request.response().setStatusCode(200).end("Hello " + (name == null || name.trim().length() == 0 ? "World" : name) + "! (by Vertx)");
+  }
 }

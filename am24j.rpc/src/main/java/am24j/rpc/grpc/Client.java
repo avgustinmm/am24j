@@ -47,8 +47,8 @@ import io.grpc.MethodDescriptor;
 import io.grpc.MethodDescriptor.MethodType;
 import io.grpc.Status;
 import io.grpc.StatusException;
+import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 /**
@@ -60,29 +60,31 @@ public class Client implements AutoCloseable {
 
   private static final Logger LOG = Ctx.logger("rpc.grpc.client");
 
-  private final Vertx vertx;
-
-  private final Future<String> deployment;
-  private List<ClientVerticle> clientVerticles = Collections.synchronizedList(new ArrayList<>());
+  private final CompletableFuture<Runnable> undeploy = new CompletableFuture<>();
+  private final List<ClientVerticle> clientVerticles = Collections.synchronizedList(new ArrayList<>());
 
   @Inject
   public Client(@Named("grpc_client.json") final DeploymentOptions options, final Vertx vertx) {
     LOG.info("Start (options: {})", options.toJson());
-    this.vertx = vertx;
-    deployment = vertx.deployVerticle(() -> {
+    vertx.deployVerticle(() -> {
       final ClientVerticle clientVerticle = new ClientVerticle();
       clientVerticles.add(clientVerticle);
       return clientVerticle;
-    }, options);
+    }, options).onComplete(ar -> {
+      if (ar.succeeded()) {
+        final Context ctx = vertx.getOrCreateContext();
+        undeploy.complete(() -> ctx.runOnContext(v -> vertx.undeploy(ar.result())));
+      } else {
+        undeploy.completeExceptionally(ar.cause());
+      }
+    });
+    undeploy.join();
   }
 
   @Override
   public void close() {
     LOG.info("Close");
-    deployment.map(deploymentID -> {
-      vertx.undeploy(deploymentID);
-      return null;
-    });
+    undeploy.thenAccept(Runnable::run);
   }
 
   @SuppressWarnings("unchecked")

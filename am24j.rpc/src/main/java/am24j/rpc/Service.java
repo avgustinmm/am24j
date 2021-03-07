@@ -26,6 +26,6 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Service {
 
-  public String serviceName();
+  public String name();
   public String version();
 }
