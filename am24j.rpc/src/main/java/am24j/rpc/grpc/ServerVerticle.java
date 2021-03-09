@@ -19,6 +19,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import am24j.commons.Builder;
 import io.grpc.ServerServiceDefinition;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -47,8 +48,10 @@ public class ServerVerticle extends AbstractVerticle {
   @Override
   public void start(final Promise<Void> startPromise) throws Exception {
     final JsonObject config = context.config();
-    VertxServerBuilder builder = VertxServerBuilder
+    final VertxServerBuilder builder =
+      VertxServerBuilder
         .forAddress(vertx, config.getString(HOST), config.getInteger(PORT));
+    Builder.inject(config, builder);
     for (final ServerServiceDefinition service : services) {
       builder.addService(service);
     }

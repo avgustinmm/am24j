@@ -60,6 +60,7 @@ public class GRPCTest extends BaseTest {
       new DeploymentOptions()
         .setConfig(
           new JsonObject()
+            .put("usePlaintext", true)
             .put(ServerVerticle.HOST, "localhost")
             .put(ServerVerticle.PORT,  1000)),
       sVertx);
@@ -67,6 +68,7 @@ public class GRPCTest extends BaseTest {
       new DeploymentOptions()
         .setConfig(
           new JsonObject()
+            .put("usePlaintext", true)
             .put(ClientVerticle.HOST, "localhost")
             .put(ClientVerticle.PORT,  1000)),
         cVertx);

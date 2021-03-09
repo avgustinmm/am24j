@@ -29,7 +29,6 @@ import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Base64;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,6 +44,7 @@ import javax.inject.Singleton;
 import org.slf4j.Logger;
 
 import am24j.commons.Ctx;
+import am24j.commons.Types;
 import am24j.inject.InjectException;
 import am24j.inject.Injector;
 import am24j.inject.spi.Resolver;
@@ -127,7 +127,7 @@ public class Config {
               } else if (Annotation.class.isAssignableFrom(clazz)) {
                 return () -> Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] {clazz}, (proxy, method, args) -> {
                   final Object value = json.getValue(method.getName());
-                  return value == null ? method.getDefaultValue() : toType(value, method.getReturnType());
+                  return value == null ? method.getDefaultValue() : Types.toType(value, method.getReturnType());
                 });
               } else {
                 try {
@@ -152,37 +152,6 @@ public class Config {
       }
       throw Resolver.NOT_FOUND;
     });
-  }
-
-  @SuppressWarnings("unchecked")
-  public static <T> T toType(final Object jsonValue, final Class<T> type) {
-    if (jsonValue == null) {
-      return null;
-    } else if (type.isAssignableFrom(jsonValue.getClass())) {
-      return (T)jsonValue;
-    }
-
-    if (type == boolean.class || type == Boolean.class) {
-      return (T)(Boolean)Boolean.parseBoolean(String.valueOf(jsonValue));
-    } else if (type == byte.class || type == Byte.class) {
-      return (T)(Byte)Byte.parseByte(String.valueOf(jsonValue));
-    } else if (type == short.class || type == Short.class) {
-      return (T)(Short)Short.parseShort(String.valueOf(jsonValue));
-    } else if (type == char.class || type == Character.class) {
-      return (T)(Character)String.valueOf(jsonValue).charAt(0);
-    } else if (type == int.class || type == Integer.class) {
-      return (T)(Integer)Integer.parseInt(String.valueOf(jsonValue));
-    } else if (type == float.class || type == Float.class) {
-      return (T)(Float)Float.parseFloat(String.valueOf(jsonValue));
-    } else if (type == long.class || type == Long.class) {
-      return (T)(Long)Long.parseLong(String.valueOf(jsonValue));
-    } else if (type == double.class || type == Double.class) {
-      return (T)(Double)Double.parseDouble(String.valueOf(jsonValue));
-    } else if (type == byte[].class) {
-      return (T)Base64.getDecoder().decode(String.valueOf(jsonValue));
-    } else {
-      throw new UnsupportedOperationException("Can't convert to " + type + "!");
-    }
   }
 
   private static void applyEnv(final File file) throws IOException {

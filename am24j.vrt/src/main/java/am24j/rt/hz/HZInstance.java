@@ -16,8 +16,6 @@
 package am24j.rt.hz;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -30,6 +28,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
+import am24j.commons.Builder;
 import am24j.commons.Ctx;
 import am24j.inject.annotation.Provides;
 import io.vertx.core.json.JsonObject;
@@ -68,50 +67,9 @@ public class HZInstance implements Provider<HazelcastInstance>, AutoCloseable {
     final Config config = new Config();
 
     LOG.info("Apply cluster json config");
-    apply(clusterConfig, config);
+    Builder.inject(clusterConfig, config);
 
     LOG.info("Creating cluster (config: {}) ...", config);
     return Hazelcast.newHazelcastInstance(config);
-  }
-
-  // create config object from json following mapping -> x -> setX()
-  private static void apply(final JsonObject json, final Object target) {
-    json.forEach(e -> {
-      try {
-        final Object value = e.getValue();
-        if (value instanceof JsonObject) {
-          final String key = "get" + e.getKey().toLowerCase();
-          for (final Method method : target.getClass().getMethods()) {
-            if (key.equals(method.getName().toLowerCase()) && method.getParameterCount() == 0) {
-              apply((JsonObject)e.getValue(), method.invoke(target));
-              break;
-            }
-          }
-        } else {
-          final String key = "set" + e.getKey().toLowerCase();
-          for (final Method method : target.getClass().getMethods()) {
-            if (key.equals(method.getName().toLowerCase()) && method.getParameterCount() == 1) {
-              method.invoke(target, am24j.rt.config.Config.toType(e.getValue(), method.getParameterTypes()[0]));
-              break;
-            }
-          }
-        }
-      } catch (final Throwable t) {
-        throw toRuntime(fromInvocation(t));
-      }
-    });
-  }
-
-  private static RuntimeException toRuntime(final Throwable t) {
-    throw t instanceof RuntimeException ? (RuntimeException)t : new RuntimeException(t);
-  }
-
-  private static Throwable fromInvocation(final Throwable t) {
-    if (t instanceof InvocationTargetException) {
-      if (t.getCause() != null) {
-        return t.getCause();
-      }
-    }
-    return t;
   }
 }

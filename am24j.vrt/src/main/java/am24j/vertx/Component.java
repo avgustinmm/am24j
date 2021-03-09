@@ -34,10 +34,10 @@ import io.vertx.core.Vertx;
  */
 public abstract class Component<T extends Verticle> implements AutoCloseable {
 
-  private static final Logger LOG = Ctx.logger("component");
+  private static final Logger LOG = Ctx.logger("Component");
 
   private final Vertx vertx;
-  private final String deploymentID;
+  private final String deploymentId;
 
   // supports only single instance!
   protected Component(final T verticle, final DeploymentOptions options, final Vertx vertx) {
@@ -56,13 +56,14 @@ public abstract class Component<T extends Verticle> implements AutoCloseable {
         future.completeExceptionally(ar.cause());
       }
     });
-    deploymentID = future.join();  }
+    deploymentId = future.join();
+  }
 
   @Override
   public void close() {
     // expected in Shutdown Hook
     final CompletableFuture<Void> future = new CompletableFuture<>();
-    vertx.undeploy(deploymentID).onComplete(ar -> {
+    vertx.undeploy(deploymentId).onComplete(ar -> {
       if (ar.succeeded()) {
         future.complete(ar.result());
       } else {

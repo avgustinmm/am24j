@@ -79,7 +79,7 @@ public class Server implements AutoCloseable {
       final List<AuthVerfier<Metadata>> authVerfiers,
       @Named("grpc_server.json") final DeploymentOptions options,
       final Vertx vertx) {
-    LOG.info("Star (options: {}, servicesL {})", options.toJson(), services);
+    LOG.info("Start (options: {}, servicesL {})", options.toJson(), services);
     this.authVerfiers = authVerfiers;
     this.vertx = vertx;
     final List<ServerServiceDefinition> ssdList =

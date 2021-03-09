@@ -39,11 +39,11 @@ public class Starter implements AutoCloseable {
 
   private Starter(final Class<?>[] compClasses) {
     injector =
-        Injector.newInstance(Ctx.logger("Injector"))
-          .add(Resolvers.multi(true)) // explicitly created only
-          .add(Resolvers.implementedBy())
-          .add(closeHandler)
-          .add(Interceptors.providesBinder());
+      Injector.newInstance(Ctx.logger("Injector"))
+        .add(Resolvers.multi(true)) // explicitly created only
+        .add(Resolvers.implementedBy())
+        .add(closeHandler)
+        .add(Interceptors.providesBinder());
 
       for (final Class<?> compClasse : compClasses) {
         try {

@@ -1,5 +1,6 @@
 {
   "config": {
+    "usePlaintext": true,
     "host": "localhost",
     "port": 1000
   }

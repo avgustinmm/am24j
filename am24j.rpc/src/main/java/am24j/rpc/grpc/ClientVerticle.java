@@ -15,6 +15,7 @@
  */
 package am24j.rpc.grpc;
 
+import am24j.commons.Builder;
 import io.grpc.ManagedChannel;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -36,10 +37,11 @@ public class ClientVerticle extends AbstractVerticle {
   @Override
   public void start(final Promise<Void> startPromise) throws Exception {
     final JsonObject config = context.config();
-    channel = VertxChannelBuilder
-      .forAddress(vertx, config.getString(HOST), config.getInteger(PORT))
-      .usePlaintext()
-      .build();
+    final VertxChannelBuilder builder =
+      VertxChannelBuilder
+        .forAddress(vertx, config.getString(HOST), config.getInteger(PORT));
+    Builder.inject(config, builder);
+    channel = builder.build();
     startPromise.complete();
   }
 

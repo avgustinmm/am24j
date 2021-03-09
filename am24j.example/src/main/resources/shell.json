@@ -5,9 +5,9 @@
       "port": 2323
     },
     "httpOptions": {
+      "ssl": false,
       "host": "localhost",
-      "port": 8080,
-      "ssl": false
+      "port": 8080
     }
   }
 }
