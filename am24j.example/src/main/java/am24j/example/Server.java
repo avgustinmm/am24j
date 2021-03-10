@@ -32,6 +32,7 @@ import am24j.vertx.VertxInstance;
 import am24j.vertx.http.Http;
 import am24j.vertx.http.RestEasy;
 import io.grpc.Metadata;
+import io.vertx.core.http.HttpServerRequest;
 
 /**
  * Bootrstrap a server with Vertx base runtime, http & gRPC server with Hello World direct / JaxRS and RPC services
@@ -60,14 +61,18 @@ public class Server {
 
       GRPCAuth.class,
 
+      BasicAuth.class,
+
       am24j.rpc.grpc.Server.class,
-      am24j.rpc.http.Server.class
+      am24j.rpc.http.Server.class,
     });
-    System.out.println("Could get Hello World via browser:");
+    System.out.println("Could get Hello World HTTP service via browser:");
     System.out.println("  http://localhost/direct/hello[?name=<name>]");
     System.out.println("  http://localhost/jaxrs/hello[?name=<name>]");
-    System.out.println("Or, start gRPC call to Hello World RPC with starting in cmd:");
+    System.out.println("Or, start gRPC call to Hello World gRPC RPC call with starting in cmd:");
     System.out.println("  java -jar example-app.jar am24j.example.Client");
+    System.out.println("Or, start gRPC call to Hello World HTTP RPC GET call via browser!");
+    System.out.println("  http://localhost/rpc/hellowprld_1.0.0/hello[?arg_0=<name>]");
   }
 
   public static class GRPCAuth implements AuthVerfier<Metadata> {
@@ -80,6 +85,23 @@ public class Server {
         return CompletableFuture.failedFuture(new RuntimeException("Unauthorixed!"));
       }
     }
+  }
 
+  public static class BasicAuth implements AuthVerfier<HttpServerRequest> {
+
+    @Override
+    public CompletionStage<Auth> verify(final HttpServerRequest request) {
+      final String authorization = request.getHeader("Authorization");
+      if (authorization == null) {
+        return CompletableFuture.completedStage(null);
+      } else {
+        return CompletableFuture.failedStage(new IllegalAccessException("Error"));
+      }
+    }
+
+    @Override
+    public String toString() {
+      return "Test Auth";
+    }
   }
 }

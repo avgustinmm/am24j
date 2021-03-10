@@ -283,7 +283,7 @@ public class Server implements AutoCloseable {
 
     protected void error(final Throwable t) {
       final String uuid = RPCException.uuid();
-      LOG.error("[{}] Call feiled!", t);
+      LOG.error("[{}] Call failed!", uuid, t);
       call.sendMessage(new am24j.rpc.avro.RPCException().setUUID(uuid).setMessage(t.getMessage()).setType(t.getClass().getName()));
     }
   }

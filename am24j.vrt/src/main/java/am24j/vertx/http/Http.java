@@ -15,7 +15,11 @@
  */
 package am24j.vertx.http;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -24,6 +28,7 @@ import javax.inject.Singleton;
 import org.slf4j.Logger;
 
 import am24j.commons.Ctx;
+import am24j.commons.Patterns;
 import am24j.vertx.Component;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
@@ -34,7 +39,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.ext.web.Router;
 
 /**
  * Provides http server in Vertx that routes to plugable {@link HttpHandler}s
@@ -51,16 +55,22 @@ public class Http extends Component<Verticle> {
     super(() -> new AbstractVerticle() {
 
       private HttpServer server;
+      private Map<String, Pattern> matchers = new HashMap<>();
 
       @Override
       public void start(final Promise<Void> startPromise) throws Exception {
         LOG.info("Start with handlers: {}", handlers);
 
-        final Router router = Router.router(vertx);
-        handlers.forEach(handler -> router.route(handler.path()).handler(routingContext -> handler.handle(routingContext.request())));
-
         server = vertx.createHttpServer(new HttpServerOptions(config()));
-        server.requestHandler(router);
+        server.requestHandler(request -> {
+          for (final HttpHandler handler : handlers) {
+            final Matcher matcher = matchers.computeIfAbsent(handler.path(), path -> Patterns.forWildCard(path, true)).matcher(request.path());
+            if (matcher.matches()) {
+              handler.handle(request);
+              return;
+            }
+          }
+        });
         server.listen().map(v -> (Void)null).onComplete(startPromise);
       }
 

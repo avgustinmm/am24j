@@ -174,6 +174,33 @@ public class MultiTest {
     Assert.assertEquals("Type", ArrayList.class, list.getClass());
   }
 
+  @Test
+  public void changeAfter() {
+    final Injector injector = Injector.newInstance().add(Resolvers.multi(true));
+    injector.bind(Key.of(String.class), "x");
+    injector.bind(Key.of(String.class), "y");
+    injector.bind(Key.of(String.class), "z");
+    injector.bind(Key.of(String.class, TestUtils.namedX()), "t"); // not collected
+
+    final List<String> list = injector.getInstance(Key.of(TestUtils.listStr(null)));
+    Assert.assertEquals("Size", 3, list.size());
+    Collections.sort(list);
+    Assert.assertEquals("Element 1", "x", list.get(0));
+    Assert.assertEquals("Element 2", "y", list.get(1));
+    Assert.assertEquals("Element 3", "z", list.get(2));
+
+    Assert.assertEquals("Type", ArrayList.class, list.getClass());
+
+    // add it after
+    injector.bind(Key.of(String.class), "t");
+    Assert.assertEquals("Size", 4, list.size());
+    Collections.sort(list);
+    Assert.assertEquals("Element 1", "t", list.get(0));
+    Assert.assertEquals("Element 2", "x", list.get(1));
+    Assert.assertEquals("Element 3", "y", list.get(2));
+    Assert.assertEquals("Element 4", "z", list.get(3));
+  }
+
   @Retention(RetentionPolicy.RUNTIME)
   @Qualifier
   public static @interface Collect {}

@@ -132,15 +132,21 @@ public class Proto {
       throw new IllegalArgumentException("The class " + iClass.getName() + " doesn't comply with service requirements!");
     }
 
-    String serviceName = iClass.getName();
     final Service serviceAnn = iClass.getAnnotation(Service.class);
-    if (serviceAnn != null) {
-      serviceName =
-        (serviceAnn == null || serviceAnn.name().length() == 0 ? iClass.getName() : serviceAnn.name()) +
-        (serviceAnn == null || serviceAnn.version().length() == 0 ? "" : '_'+ serviceAnn.version());
+    final String namespace;
+    final String name;
+    if (serviceAnn == null) {
+       final String serviceName = iClass.getName();
+       final int index = serviceName.lastIndexOf('.');
+       namespace = index == -1 ? "" : serviceName.substring(0, index);
+       name = serviceName.substring(index + 1);
+    } else {
+      final String serviceName = serviceAnn.name().length() == 0 ? iClass.getName() : serviceAnn.name();
+      final int index = serviceName.lastIndexOf('.');
+      namespace = index == -1 ? "" : serviceName.substring(0, index);
+      name = serviceName.substring(index + 1) + (serviceAnn.version().length() == 0 ? "" : '_'+ serviceAnn.version());
     }
-    final int index = serviceName.lastIndexOf('.');
-    final Protocol protocol = new Protocol(serviceName.substring(index + 1), index == -1 ? "" : serviceName.substring(0, index));
+    final Protocol protocol = new Protocol(name, namespace);
 
     final Collection<Schema> types = new ArrayList<>();
     types.add(RPCException.RPC_EXCEPTION_SCHEMA);

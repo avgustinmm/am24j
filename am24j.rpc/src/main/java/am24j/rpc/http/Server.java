@@ -41,6 +41,7 @@ import org.slf4j.Logger;
 import am24j.commons.ASync;
 import am24j.commons.Ctx;
 import am24j.commons.Reflect;
+import am24j.commons.Types;
 import am24j.commons.Utils;
 import am24j.rpc.AuthVerfier;
 import am24j.rpc.RPCException;
@@ -52,8 +53,10 @@ import am24j.vertx.http.Http;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.json.JsonObject;
 
 /**
  * HTTP RPC Server
@@ -105,27 +108,23 @@ public class Server implements Http.HttpHandler {
           authVerifier -> authVerifier.verify(request)))
       .whenCompleteAsync((auth, error) -> {
         if (error == null) {
-          final MethodHandler handler = methodsMap.get(request.uri());
+          final MethodHandler handler = methodsMap.get(request.path());
           if (handler == null) {
-            request.response().setStatusCode(404).write("Not found: " + request.uri() + "!", "plain/text").map(v -> {
-              request.response().end();
-              return null;
-            });
+            LOG.debug("Method not found: {}!", request.uri());
+            respond(request.response(), 404, true, new JsonObject().put("error", "Not found: " + request.path() + "!").encodePrettily());
           } else {
             if (auth == null) {
-              request.response().setStatusCode(403).write("Unauthorixed: " + request.uri() + "!", "plain/text").map(v -> {
-                request.response().end();
-                return null;
-              });
+              handler.handle(request, vExecutor);
             } else {
               auth.runAs(() -> handler.handle(request, vExecutor));
             }
           }
         } else {
           if (request.getHeader("Authorization") == null) {
-            request.response().putHeader("WWW-Authenticate:", authVerfiers.get(0).toString()).setStatusCode(401).end();
+            request.response().putHeader("WWW-Authenticate:", authVerfiers.get(0).toString());
+            respond(request.response(), 401, true, "");
           } else {
-            request.response().setStatusCode(403).end();
+            respond(request.response(), 403, true, new JsonObject().put("error", error.toString()).encodePrettily());
           }
         }
       }, vExecutor);
@@ -137,9 +136,19 @@ public class Server implements Http.HttpHandler {
       .flatMap(iClass -> methodDescriptors(iClass, service));
   }
 
+  private Future<Void> respond(final HttpServerResponse response, final int status, final boolean json, final String content)  {
+    LOG.debug("Response content: {}", content);
+    return response.setStatusCode(status)
+      .putHeader("content-tyoe", json ? "application/json" : "avro/binary")
+      .putHeader("content-length", String.valueOf(content.length()))
+      .write(content).map(v -> {
+        response.end();
+        return null;
+      });
+  }
+
   private Stream<MethodHandler> methodDescriptors(final Class<?> iClass, final Object service) {
     final Protocol aProto = Proto.protocol(iClass);
-
     return Arrays.stream(iClass.getMethods()) // all methods - not only declared
       .collect(Collectors.toMap(Reflect::methodSig, Function.identity()))
       .values()
@@ -166,10 +175,10 @@ public class Server implements Http.HttpHandler {
     }
 
     private Future<Void> handle(final HttpServerRequest request, final Executor vExecutor) {
-      final boolean json = !"avro/binary".equals(request.getHeader("content-type"));
+      final boolean json = request.method() == HttpMethod.GET || !"avro/binary".equals(request.getHeader("content-type"));
       return handle0(request, json, vExecutor).recover(t -> {
         final String uuid = RPCException.uuid();
-        LOG.error("[{}] Call feiled!", t);
+        LOG.error("[{}] Call failed!", uuid, t);
         am24j.rpc.avro.RPCException rpcExc = new am24j.rpc.avro.RPCException().setUUID(uuid).setMessage(t.getMessage()).setType(t.getClass().getName());
         final String jsonTesp = stream(rpcExc, json);
         return respond(request.response(), 500, json, jsonTesp);
@@ -195,6 +204,7 @@ public class Server implements Http.HttpHandler {
     private Future<Void> call(final Object[] args, final HttpServerRequest request, final boolean json, final Executor vExecutor) {
       final Promise<Void> promise = Promise.promise();
       try {
+        LOG.info("[{}] Call {}, args: {}", path(), method, args);
         ((CompletionStage<Object>)method.invoke(service, args)).whenCompleteAsync((resp, error) -> {
           try {
             if (error == null) {
@@ -269,6 +279,20 @@ public class Server implements Http.HttpHandler {
     }
 
     private Future<Object[]> parse(final HttpServerRequest request, final boolean json) {
+      if (request.method() == HttpMethod.GET) {
+        final Object[] params = new Object[method.getParameterCount()];
+        for (int i = params.length; i-- > 0;) {
+          String value = request.getParam("arg_" + i);
+          if (value == null) {
+            value = request.getParam(String.valueOf(i));
+          }
+          if (value != null) {
+//            final Schema.Field field = aMessage.getRequest().getField("arg_" + i);
+            params[i] = Types.toType(value, method.getParameterTypes()[i]);
+          }
+        }
+        return Future.succeededFuture(params);
+      }
       final String contentLength = request.getHeader("content-length");
       LOG.debug("Received: {}", contentLength);
       request.resume();
@@ -276,17 +300,6 @@ public class Server implements Http.HttpHandler {
         LOG.debug("Request body: {}", body);
         return body;
       }).map(body -> Proto.decodeReq(aMessage.getRequest(), new ByteArrayInputStream(body.getBytes()), json));
-    }
-
-    private Future<Void> respond(final HttpServerResponse response, final int status, final boolean json, final String content)  {
-      LOG.debug("Response content: {}", content);
-      return response.setStatusCode(status)
-        .putHeader("content-tyoe", json ? "application/json" : "avro/binary")
-        .putHeader("content-length", String.valueOf(content.length()))
-        .write(content).map(v -> {
-          response.end();
-          return null;
-        });
     }
 
     private String stream(final Object resp, final boolean json) {

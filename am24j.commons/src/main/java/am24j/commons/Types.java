@@ -56,6 +56,8 @@ public class Types {
       return (T)Base64.getDecoder().decode(str);
     } else if (type == Duration.class) {
       return (T)Duration.parse(str);
+    } else if (type == String.class) {
+      return (T)str;
     }
     throw new UnsupportedOperationException("Can't convert to " + type + "!");
   }
