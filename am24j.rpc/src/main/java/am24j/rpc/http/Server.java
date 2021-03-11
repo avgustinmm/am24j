@@ -66,9 +66,9 @@ import io.vertx.core.json.JsonObject;
 @Singleton
 public class Server implements Http.HttpHandler {
 
-  private static final Logger LOG = Ctx.logger("rpc.http.server");
+  public static final String HTTP_RPC_ROOT = Ctx.prop("rpc.http.root", "/rpc");
 
-  private static final String HTTP_RPC_ROOT = Ctx.prop("rpc.http.root", "/rpc");
+  private static final Logger LOG = Ctx.logger("rpc.http.server");
 
   private final List<AuthVerfier<HttpServerRequest>> authVerfiers;
   private final Map<String, MethodHandler> methodsMap;
@@ -187,9 +187,9 @@ public class Server implements Http.HttpHandler {
     private Future<Void> handle0(final HttpServerRequest request, final boolean json, final Executor vExecutor) {
       try {
         if (stream) {
-          return parse(request, json).compose(args -> stream(args, request.response(), json, vExecutor));
+          return parse(request, json, stream).compose(args -> stream(args, request.response(), json, vExecutor));
         } else {
-          return parse(request, json).compose(args -> call(args, request, json, vExecutor));
+          return parse(request, json, stream).compose(args -> call(args, request, json, vExecutor));
         }
       } catch (final Throwable t) {
         return Future.failedFuture(t);
@@ -220,7 +220,7 @@ public class Server implements Http.HttpHandler {
           }
         }, vExecutor);
       } catch (final Throwable t) {
-        promise.fail(t);
+        promise.fail(t instanceof InvocationTargetException && t.getCause() != null ? t.getCause() : t);
       }
       return promise.future();
     }
@@ -278,9 +278,9 @@ public class Server implements Http.HttpHandler {
       return promise.future();
     }
 
-    private Future<Object[]> parse(final HttpServerRequest request, final boolean json) {
+    private Future<Object[]> parse(final HttpServerRequest request, final boolean json, final boolean stream) {
       if (request.method() == HttpMethod.GET) {
-        final Object[] params = new Object[method.getParameterCount()];
+        final Object[] params = new Object[method.getParameterCount() + (stream ? -1 : 0)];
         for (int i = params.length; i-- > 0;) {
           String value = request.getParam("arg_" + i);
           if (value == null) {
@@ -293,6 +293,7 @@ public class Server implements Http.HttpHandler {
         }
         return Future.succeededFuture(params);
       }
+
       final String contentLength = request.getHeader("content-length");
       LOG.debug("Received: {}", contentLength);
       request.resume();

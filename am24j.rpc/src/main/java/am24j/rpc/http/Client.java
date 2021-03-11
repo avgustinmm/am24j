@@ -37,6 +37,7 @@ import org.apache.avro.Protocol.Message;
 import org.slf4j.Logger;
 
 import am24j.commons.Ctx;
+import am24j.commons.JsonReader;
 import am24j.rpc.avro.Proto;
 import am24j.rpc.avro.RPCException;
 import am24j.vertx.VertxUtils;
@@ -192,7 +193,7 @@ public class Client implements AutoCloseable {
         final int bufPos = this.bufPos;
         final int pos = this.pos;
         try {
-          final Object decoded = Proto.decodeResp(aMessage.getResponse(), aMessage.getErrors(), this, json);
+          final Object decoded = Proto.decodeResp(aMessage.getResponse(), aMessage.getErrors(), JsonReader.wrapper(this), json);
           if (decoded instanceof RPCException) {
             subscriber.onError(((RPCException)decoded).toRPC());
           } else {

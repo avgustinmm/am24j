@@ -211,9 +211,6 @@ public class Proto {
 
   public static Object[] decodeReq(final Schema reqSchema, final InputStream is, final boolean json) {
     try {
-//      if (json && reqSchema.getType() == Schema.Type.NULL) {
-//        return new Object[0];
-//      }
       final Decoder deooder = json ?
         DECODER_FACTORY.jsonDecoder(reqSchema, is) :
         DECODER_FACTORY.binaryDecoder(is, null);
