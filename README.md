@@ -65,10 +65,14 @@ To run examole get the built artifact _example-app.jar_ and start it with:
 java -jar example-app.jar am24j.example.Server
 ```
 Then you may access _Hello World_ HTTP and RPC app as printed on console:
-* direct HTTP handler - `http://localhost/direct/hello[?name=<name>]` 
-* JAX-RS - `http://localhost/jaxrs/hello[?name=<name>]`)
-* start the same jar with different main class which makes request to a RPC service via gRPC: `java -jar example-app.jar am24j.example.Client`
-* access HTTP RPC service via browser - `http://localhost/rpc/hellowprld_1.0.0/hello[?arg_0=<name>]`
+* direct HTTP handler:</br>
+`http://localhost/direct/hello[?name=<name>]` 
+* JAX-RS:</br>
+`http://localhost/jaxrs/hello[?name=<name>]`)
+* start the same jar with different main class which makes request to a RPC service via gRPC:</br>
+`java -jar example-app.jar am24j.example.Client`
+* access HTTP RPC service via browser:</br>
+`http://localhost/rpc/hellowprld_1.0.0/hello[?arg_0=<name>]`
 
 #### Injector
 Injector is a simple implementation of Dependency Injector following concepts of JSR-330. 
