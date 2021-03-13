@@ -15,6 +15,8 @@
  */
 package am24j.example;
 
+import javax.inject.Inject;
+
 import am24j.example.hellowold.RPCInterface;
 import am24j.inject.Injector.Key;
 import am24j.inject.Starter;
@@ -23,17 +25,31 @@ import am24j.vertx.VertxInstance;
 
 public class Client {
 
+  // Client application component, injected whit remote service
+  public static final class HelloWorldPrinter {
+
+    @Inject
+    public HelloWorldPrinter(final RPCInterface service) {
+      System.out.println("RPC call returned:\n  " + service.hello("World (" + System.currentTimeMillis() + ")").toCompletableFuture().join());
+    }
+  }
+
   public static void main(final String[] args) throws Exception {
     try (final Starter starter = Starter.start(new Class<?>[] {
         Config.class,
-        VertxInstance.class
+        VertxInstance.class,
+        am24j.rpc.grpc.Client.class
       })) {
-      final RPCInterface service =
-        starter
-          .injector()
-          .<am24j.rpc.grpc.Client>getInstance(Key.of(am24j.rpc.grpc.Client.class))
-          .service(() -> "user:pass", RPCInterface.class);
-      System.out.println("RPC call returned:\n  " + service.hello("World (" + System.currentTimeMillis() + ")").toCompletableFuture().join());
+      // bind RPCInterface service in injector
+      starter.injector().bind(
+        Key.of(RPCInterface.class),
+        starter.injector()
+          .<am24j.rpc.grpc.Client>getInstance(Key.of(am24j.rpc.grpc.Client.class)).service(() -> "user:pass", RPCInterface.class));
+
+      // client app is prepared / set up
+
+      // build printer, inkecting service
+      starter.injector().getInstance(Key.of(HelloWorldPrinter.class));
     }
   }
 }
