@@ -24,21 +24,16 @@ import java.io.ObjectOutputStream;
 import org.junit.Assert;
 import org.junit.Test;
 
-import am24j.avro.Avro.Encoding;
+import am24j.bean.BeanTest.BExtern;
+import am24j.bean.BeanTest.BSerial;
 
-public class BeanTest {
+public class BeanBuildableTest {
 
   @Test
   public void hash() {
-    final B b = new B();
-    b.a(14);
-    b.b("dfsdf");
-    final B b2 = new B();
-    b2.a(14);
-    b2.b("dfsdf");
-    final B b3 = new B();
-    b3.a(142);
-    b3.b("dfsdddf");
+    final Buildable b = Buildable.builder().a(14).b("dfsdf").build();
+    final Buildable b2 = Buildable.builder().a(14).b("dfsdf").build();
+    final Buildable b3 = Buildable.builder().a(142).b("dfsdddf").build();
     Assert.assertEquals(b.hashCode(), b2.hashCode());
     Assert.assertNotEquals(b2.hashCode(), b3.hashCode());
     Assert.assertNotEquals(b.hashCode(), b3.hashCode());
@@ -49,15 +44,9 @@ public class BeanTest {
 
   @Test
   public void equals() {
-    final B b = new B();
-    b.a(14);
-    b.b("dfsdf");
-    final B b2 = new B();
-    b2.a(14);
-    b2.b("dfsdf");
-    final B b3 = new B();
-    b3.a(142);
-    b3.b("dfsdddf");
+    final Buildable b = Buildable.builder().a(14).b("dfsdf").build();
+    final Buildable b2 = Buildable.builder().a(14).b("dfsdf").build();
+    final Buildable b3 = Buildable.builder().a(142).b("dfsdddf").build();
     Assert.assertEquals(b, b2);
     Assert.assertNotEquals(b2, b3);
     Assert.assertNotEquals(b, b3);
@@ -65,36 +54,30 @@ public class BeanTest {
 
   @Test
   public void str() {
-    final B b = new B();
-    b.a(14);
-    b.b("dfsdf");
+    final Buildable b = Buildable.builder().a(14).b("dfsdf").build();
     System.out.println(b);
   }
 
   @Test
   public void serialize() throws IOException, ClassNotFoundException {
-    final BSerial b = new BSerial();
-    b.a(14);
-    b.b("dfsdf");
+    final Buildable b = Buildable.builder().a(14).b("dfsdf").build();
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     final ObjectOutputStream oos = new ObjectOutputStream(baos);
-    oos.writeObject(b);
+    oos.writeObject(new Serial(b));
 
-    Assert.assertEquals(b, new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())).readObject());
+    Assert.assertEquals(b, ((Serial)new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())).readObject()).unwrap());
   }
 
   @Test
   public void externalize() throws IOException, ClassNotFoundException {
-    final BExtern b = new BExtern();
-    b.a(14);
-    b.b("dfsdf");
+    final Buildable b = Buildable.builder().a(14).b("dfsdf").build();
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     final ObjectOutputStream oos = new ObjectOutputStream(baos);
-    oos.writeObject(b);
+    oos.writeObject(new Extern(b));
 
-    Assert.assertEquals(b, new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())).readObject());
+    Assert.assertEquals(b, ((Extern)new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())).readObject()).unwrap());
   }
 
   @Test
@@ -123,87 +106,76 @@ public class BeanTest {
     Assert.assertEquals(b, new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())).readObject());
   }
 
-  public static class B extends Bean<B> {
+  public static class Buildable extends Bean<Buildable> {
 
-    private int a;
-    private String b;
+    private final int a;
+    private final String b;
 
-    public B() {}
+    private Buildable(final int a, final String b) {
+      this.a = a;
+      this.b = b;
+    }
+
+    public static Builder builder() {
+      return new Builder();
+    }
 
     public int a() {
       return a;
-    }
-
-    public void a(final int a) {
-      this.a = a;
     }
 
     public String b() {
       return b;
     }
 
-    public void b(final String b) {
-      this.b = b;
+    public static class Builder {
+
+      private int a;
+      private String b;
+
+      public Builder a(final int a) {
+        this.a = a;
+        return this;
+      }
+
+      public Builder b(final String b) {
+        this.b = b;
+        return this;
+      }
+
+      public Buildable build() {
+        return new Buildable(a, b);
+      }
     }
   }
 
-  public static class BSerial extends Bean.Serial<BSerial> {
+  public static class Serial extends Bean.BuildableWrapperSerial<Buildable> {
 
     private static final long serialVersionUID = 1L;
 
-    private int a;
-    private String b;
+    public Serial() {}
 
-    public BSerial() {}
-
-    public int a() {
-      return a;
-    }
-
-    public void a(final int a) {
-      this.a = a;
-    }
-
-    public String b() {
-      return b;
-    }
-
-    public void b(final String b) {
-      this.b = b;
+    private Serial(final Buildable buildable) {
+      super(buildable);
     }
 
     @Override
-    public Encoding encoding() {
-      return Encoding.Json;
+    protected Class<Buildable> type() {
+      return Buildable.class;
     }
   }
 
-  public static class BExtern extends Bean.Extern<BExtern> {
+  public static class Extern extends Bean.BuildableWrapperExtern<Buildable> {
 
-    private int a;
-    private String b;
+    public Extern() {}
 
-    public BExtern() {}
-
-    public int a() {
-      return a;
-    }
-
-    public void a(final int a) {
-      this.a = a;
-    }
-
-    public String b() {
-      return b;
-    }
-
-    public void b(final String b) {
-      this.b = b;
+    private Extern(final Buildable buildable) {
+      super(buildable);
     }
 
     @Override
-    public Encoding encoding() {
-      return Encoding.Json;
+    protected Class<Buildable> type() {
+      return Buildable.class;
     }
   }
 }

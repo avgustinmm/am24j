@@ -18,6 +18,8 @@ package am24j.avro;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -40,8 +42,8 @@ import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
 
-import am24j.bean.Bean;
-import am24j.bean.Bean.Property;
+import am24j.bean.Struct;
+import am24j.bean.Struct.Property;
 
 /**
  * Provides avro encodings
@@ -65,7 +67,7 @@ public class Avro {
   }
 
   public static Schema forClassNullable(final Class<?> clazz) {
-    return forTypeNullable((Type)clazz);
+    return forTypeNullable(clazz);
   }
 
   private static final Map<Type, Schema> SCHEMAS_NULLABLE = new HashMap<>();
@@ -73,44 +75,61 @@ public class Avro {
     return SCHEMAS_NULLABLE.computeIfAbsent(type,  t -> SchemaBuilder.nullable().type(forType(type)));
   }
 
-  public static byte[] write(final Object obj, final Encoding encoding) throws IOException {
-    return write(obj, obj.getClass(), encoding);
+  public static void write(final Object obj, final Encoding encoding, final OutputStream os) throws IOException {
+    write(obj, obj.getClass(), encoding, os);
   }
 
-  public static byte[] write(final Object obj, final Type type, final Encoding encoding) throws IOException {
+  public static byte[] encode(final Object obj, final Encoding encoding) throws IOException {
+    return encode(obj, obj.getClass(), encoding);
+  }
+
+  public static void write(final Object obj, final Type type, final Encoding encoding, final OutputStream os) throws IOException {
     final Schema schema = forType(type);
-    final Bean<Object> bean = Bean.forType(type);
+    final Struct<Object> bean = Struct.forType(type);
     final GenericRecord record = new GenericData.Record(schema);
     final Property[] props = bean.properties();
     final Object[] values = bean.values(obj);
     for (int i = 0; i < props.length; i++) {
       record.put(props[i].name(), values[i]);
     }
+    final Encoder encoder = encoding == Encoding.Binary ? EncoderFactory.get().binaryEncoder(os, null) : EncoderFactory.get().jsonEncoder(schema, os);
+    final DatumWriter<GenericRecord> writer = new GenericDatumWriter<>(schema);
+    writer.write(record, encoder);
+    encoder.flush();
+  }
+
+  public static byte[] encode(final Object obj, final Type type, final Encoding encoding) throws IOException {
     try (final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-      final Encoder encoder = encoding == Encoding.Binary ? EncoderFactory.get().binaryEncoder(baos, null) : EncoderFactory.get().jsonEncoder(schema, baos);
-      final DatumWriter<GenericRecord> writer = new GenericDatumWriter<>(schema);
-      writer.write(record, encoder);
-      encoder.flush();
+      write(obj, type, encoding, baos);
       return baos.toByteArray();
     }
   }
 
-  public static <T> T read(final byte[] ba, final Type type, final Encoding encoding) throws IOException {
+  public static <T> T read(final Type type, final Encoding encoding, final InputStream os) throws IOException {
+    final Struct<T> bean = Struct.forType(type);
+    return bean.build(values(type, encoding, bean, os));
+  }
+
+  public static <T> Object[] values(final Type type, final Encoding encoding, final Struct<T> bean, final InputStream os) throws IOException {
     final Schema schema = forType(type);
     GenericRecord record = new GenericData.Record(schema);
-    try (final ByteArrayInputStream baos = new ByteArrayInputStream(ba)) {
-      final Decoder decoder = encoding == Encoding.Binary ? DecoderFactory.get().binaryDecoder(baos, null) : DecoderFactory.get().jsonDecoder(schema, baos);
-      final DatumReader<GenericRecord> reader = new GenericDatumReader<>(schema);
-      record = reader.read(record, decoder);
-    }
 
-    final Bean<T> bean = Bean.forType(type);
+    final Decoder decoder = encoding == Encoding.Binary ? DecoderFactory.get().binaryDecoder(os, null) : DecoderFactory.get().jsonDecoder(schema, os);
+    final DatumReader<GenericRecord> reader = new GenericDatumReader<>(schema);
+    record = reader.read(record, decoder);
+
     final Property[] props = bean.properties();
     final Object[] values = new Object[props.length];
     for (int i = 0; i < props.length; i++) {
       values[i] = record.get(props[i].name());
     }
-    return bean.build(values);
+    return values;
+  }
+
+  public static <T> T decode(final byte[] ba, final Type type, final Encoding encoding) throws IOException {
+    try (final ByteArrayInputStream baos = new ByteArrayInputStream(ba)) {
+      return read(type, encoding, baos);
+    }
   }
 
   private static synchronized Schema forType(final Type type, final Stack<Type> stack) {
@@ -152,7 +171,7 @@ public class Avro {
       for (int i = eConsts.length; i-- > 0; symbols[i] = ((Enum<?>)eConsts[i]).name());
       return eTypeBuilder.symbols(symbols);
     } else { // bean
-      final Bean<?> bean = Bean.forType(type);
+      final Struct<?> bean = Struct.forType(type);
       final int index = clazz.getName().lastIndexOf('.');
       final RecordBuilder<Schema> rTypeBuilder = SchemaBuilder.record(name(clazz, index));
       rTypeBuilder.namespace(namespace(clazz, index)); // empty namespace is treated as null
