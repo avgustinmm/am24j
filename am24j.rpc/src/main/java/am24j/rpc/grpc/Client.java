@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Singleton;
 
 import org.slf4j.Logger;
 
@@ -56,6 +57,7 @@ import io.vertx.core.Vertx;
  *
  * @author avgustinmm
  */
+@Singleton
 public class Client implements AutoCloseable {
 
   private static final Logger LOG = Ctx.logger("rpc.grpc.client");

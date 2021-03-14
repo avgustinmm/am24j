@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Singleton;
 
 import org.apache.avro.Protocol;
 import org.apache.avro.Protocol.Message;
@@ -56,6 +57,7 @@ import io.vertx.core.json.JsonObject;
  *
  * @author avgustinmm
  */
+@Singleton
 public class Client implements AutoCloseable {
 
   private static final Logger LOG = Ctx.logger("rpc.http.client");

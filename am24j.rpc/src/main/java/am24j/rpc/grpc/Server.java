@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Singleton;
 
 import org.apache.avro.Protocol;
 import org.slf4j.Logger;
@@ -64,6 +65,7 @@ import io.vertx.core.Vertx;
  *
  * @author avgustinmm
  */
+@Singleton
 public class Server implements AutoCloseable {
 
   private static final Logger LOG = Ctx.logger("rpc.grpc.server");
