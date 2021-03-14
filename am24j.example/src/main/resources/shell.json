@@ -2,12 +2,12 @@
   "config": {
     "telnetOptions": {
       "host": "localhost",
-      "port": 2323
+      "port": 230${node.id:-0}
     },
     "httpOptions": {
       "ssl": false,
       "host": "localhost",
-      "port": 8080
+      "port": 800${node.id:-0}
     }
   }
 }

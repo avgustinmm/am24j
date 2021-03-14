@@ -2,6 +2,6 @@
   "config": {
     "usePlaintext": true,
     "host": "localhost",
-    "port": 1080
+    "port": 108${node.id:-0}
   }
 }

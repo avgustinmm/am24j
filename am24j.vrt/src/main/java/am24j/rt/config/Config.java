@@ -77,7 +77,7 @@ public class Config {
     final byte[] sysJsonBA = Ctx.resource(sysJson);
     if (sysJsonBA != null) {
       // Apply conversion to file (if there are place holders) on the copy of original file
-      final File target = Ctx.readWriteFile("_tmp_efective_" + sysJson);
+      final File target = new File(tmpDir(), "efective_" + sysJson);
       target.deleteOnExit();
       try (final OutputStream os = new FileOutputStream(target)) {
         os.write(sysJsonBA);
@@ -111,7 +111,7 @@ public class Config {
             // try config file - support JsonObject and object with JsonObject constructor
             final byte[] configFile = Ctx.resource(name);
             if (configFile != null) {
-              final File target = Ctx.readWriteFile("_tmp_efective_" + name);
+              final File target = new File(tmpDir(), "efective_" + name);
               target.deleteOnExit();
               try (final OutputStream os = new FileOutputStream(target)) {
                 os.write(configFile);
@@ -152,6 +152,18 @@ public class Config {
       }
       throw Resolver.NOT_FOUND;
     });
+  }
+
+  private File tmpDir;
+  private synchronized File tmpDir() throws IOException {
+    if (tmpDir == null) {
+      tmpDir = Ctx.readWriteFile(".tmp" + System.currentTimeMillis());
+      if (!tmpDir.mkdirs()) {
+        throw new IOException("Failed to get temp dir!");
+      }
+      tmpDir.deleteOnExit();
+    }
+    return tmpDir;
   }
 
   private static void applyEnv(final File file) throws IOException {

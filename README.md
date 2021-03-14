@@ -74,6 +74,17 @@ Then you may access _Hello World_ HTTP and RPC app as printed on console:
 * access HTTP RPC service via browser:</br>
 `http://localhost/rpc/hellowprld_1.0.0/hello[?arg_0=<name>]`
 
+Clustering:</br>
+You may, also, start other instances of server with:
+```
+java -Dam24j.node.id=1 -jar example-app.jar am24j.example.Server
+java -Dam24j.node.id=2 -jar example-app.jar am24j.example.Server
+java -Dam24j.node.id=3 -jar example-app.jar am24j.example.Server
+...
+```
+where node id is the id of nodes (omitting it starts default instance with id 0).</br>
+All these nodes acts in cluster (powered by Hazalcast) discovered using multicast.
+
 #### Injector
 Injector is a simple implementation of Dependency Injector following concepts of JSR-330. 
 Nevertheless, its simplicity it provides powerful pluggable framework that allows to be highly 

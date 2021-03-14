@@ -1,9 +1,10 @@
 *.iml
-.flattened-pom.xml
 .idea
 .settings
 .classpath
 .project
+.flattened-pom.xml
+.tmp*
 .log4j
 target
 *.zip

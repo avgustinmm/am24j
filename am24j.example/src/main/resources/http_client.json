@@ -1,6 +1,6 @@
 {
   "ssl": false,
   "defaultHost": "localhost",
-  "defaultPort": 80,
-  "connectTimeout": 30000    
+  "defaultPort": 8${node.id:-0},
+  "connectTimeout": 30000 
 }

@@ -18,6 +18,7 @@ package am24j.example;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import am24j.commons.Ctx;
 import am24j.example.hellowold.DirectHttp;
 import am24j.example.hellowold.JaxRS;
 import am24j.example.hellowold.RPCImpl;
@@ -66,13 +67,15 @@ public class Server {
       am24j.rpc.grpc.Server.class,
       am24j.rpc.http.Server.class,
     });
+    final String httpPort = Ctx.intProp("node.id", 0) == 0 ? "" : ":8" + Ctx.intProp("node.id", 0);
+    final String rpcClientConf = Ctx.intProp("node.id", 0) == 0 ? "" :  " -Dnode.id=" + Ctx.intProp("node.id", 0);
     System.out.println("Could get Hello World HTTP service via browser:");
-    System.out.println("  http://localhost/direct/hello[?name=<name>]");
-    System.out.println("  http://localhost/jaxrs/hello[?name=<name>]");
+    System.out.println("  http://localhost" + httpPort + "/direct/hello[?name=<name>]");
+    System.out.println("  http://localhost" + httpPort + "/jaxrs/hello[?name=<name>]");
     System.out.println("Or, start gRPC call to Hello World gRPC RPC call with starting in cmd:");
-    System.out.println("  java -jar example-app.jar am24j.example.Client");
+    System.out.println("  java" + rpcClientConf + " -jar example-app.jar  am24j.example.Client");
     System.out.println("Or, start gRPC call to Hello World HTTP RPC GET call via browser!");
-    System.out.println("  http://localhost/rpc/hellowprld_1.0.0/hello[?arg_0=<name>]");
+    System.out.println("  http://localhost" + httpPort + "/rpc/hellowprld_1.0.0/hello[?arg_0=<name>]");
   }
 
   public static class GRPCAuth implements AuthVerfier<Metadata> {

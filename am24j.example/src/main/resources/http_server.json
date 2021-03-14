@@ -2,7 +2,7 @@
   "config": {
     "ssl": false,
     "host": "localhost",
-    "port": 80
+    "port": 8${node.id:-0}
   },
   "instances": 2,
   "worker": false,

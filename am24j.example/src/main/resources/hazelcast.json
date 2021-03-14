@@ -3,7 +3,8 @@
     "join": {
       "multicastConfig": {
         "loopbackModeEnabled": true,
-        "multicastGroup": "${hazelcast.address:-232.0.1.0}",
+        "multicastGroup": "${hazelcast.address:-224.7.7.7}",
+        "multicastPort": "${hazelcast.port:-7770}",
         "enabled": true
       }
     }
