@@ -20,7 +20,9 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
 
@@ -31,8 +33,65 @@ import javax.inject.Qualifier;
  */
 class Utils {
 
+  public static Named named(final String name) {
+    return named0(name == null ? "" : name);
+  }
+  private static Named named0(final String name) {
+    return new Named() {
+
+      @Override
+      public Class<? extends Annotation> annotationType() {
+        return Named.class;
+      }
+
+      @Override
+      public String value() {
+        return name;
+      }
+
+      @Override
+      public int hashCode() {
+        return (127 * "value".hashCode()) ^ Objects.hashCode(value());
+      }
+
+      @Override
+      public boolean equals(final Object o) {
+        if (o instanceof Named) {
+          final Named named = (Named)o;
+          return Objects.equals(named.value(), value());
+        }
+        return false;
+      }
+
+      @Override
+      public String toString() {
+        return "@" + Utils.class.getName() + "$Named(value=\"" + value() + "\")";
+      }
+    };
+  }
+
+  public static Type parameterizedType(final Type raw, final Type[] actual, final Type owner) {
+    return new ParameterizedType() {
+
+      @Override
+      public Type getRawType() {
+        return raw;
+      }
+
+      @Override
+      public Type getOwnerType() {
+        return owner;
+      }
+
+      @Override
+      public Type[] getActualTypeArguments() {
+        return actual;
+      }
+    };
+  }
+
   @SuppressWarnings("unchecked")
-  public static Class<?> clazz(final Type type) {
+  static Class<?> clazz(final Type type) {
     if (type instanceof Class) {
       return (Class<Object>)type;
     } else if (type instanceof ParameterizedType) {
@@ -42,7 +101,7 @@ class Utils {
     }
   }
 
-  public static List<Annotation> qualifiers(final Annotation[] annotations) {
+  static List<Annotation> qualifiers(final Annotation[] annotations) {
     final List<Annotation> qualifiers = new ArrayList<>();
     for (final Annotation annptation : annotations) {
       if (annptation.annotationType().getAnnotation(Qualifier.class) != null) {
@@ -52,7 +111,7 @@ class Utils {
     return qualifiers;
   }
 
-  public static Type providerType(final Class<?> clazz) {
+  static Type providerType(final Class<?> clazz) {
     final Type[] interfaces = clazz.getGenericInterfaces();
     if (interfaces != null) {
       for (final Type type : interfaces) {
@@ -67,7 +126,7 @@ class Utils {
     return null;
   }
 
-  public static List<Type> types(final Class<?> clazz) {
+  static List<Type> types(final Class<?> clazz) {
     final List<Type> types = new ArrayList<>();
     types.add(clazz);
     final Type[] interfaces = clazz.getGenericInterfaces();

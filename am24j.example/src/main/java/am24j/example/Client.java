@@ -44,7 +44,8 @@ public class Client {
       starter.injector().bind(
         Key.of(RPCInterface.class),
         starter.injector()
-          .<am24j.rpc.grpc.Client>getInstance(Key.of(am24j.rpc.grpc.Client.class)).service(() -> "user:pass", RPCInterface.class));
+          .<am24j.rpc.grpc.Client>getInstance(Key.of(am24j.rpc.grpc.Client.class))
+          .service(() -> "user:pass", RPCInterface.class));
 
       // client app is prepared / set up
 

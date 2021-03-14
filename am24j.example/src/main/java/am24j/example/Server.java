@@ -73,7 +73,7 @@ public class Server {
     System.out.println("  http://localhost" + httpPort + "/direct/hello[?name=<name>]");
     System.out.println("  http://localhost" + httpPort + "/jaxrs/hello[?name=<name>]");
     System.out.println("Or, start gRPC call to Hello World gRPC RPC call with starting in cmd:");
-    System.out.println("  java" + rpcClientConf + " -jar example-app.jar  am24j.example.Client");
+    System.out.println("  java" + rpcClientConf + " -jar example-app.jar am24j.example.Client");
     System.out.println("Or, start gRPC call to Hello World HTTP RPC GET call via browser!");
     System.out.println("  http://localhost" + httpPort + "/rpc/hellowprld_1.0.0/hello[?arg_0=<name>]");
   }

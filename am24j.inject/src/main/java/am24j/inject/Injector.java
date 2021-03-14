@@ -459,6 +459,10 @@ public class Injector {
       return new Key(type, qualifer);
     }
 
+    public static Key of(final Type type, final String name) {
+      return new Key(type, Utils.named(name));
+    }
+
     public Type type() {
       return type;
     }
