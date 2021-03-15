@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>am24j</groupId>
+    <groupId>com.github.avgustinmm</groupId>
     <artifactId>am24j.root</artifactId>
     <version>${revision}</version>
   </parent>
@@ -41,17 +41,17 @@
     </dependency>    
     
     <dependency>
-      <groupId>am24j</groupId>
+      <groupId>com.github.avgustinmm</groupId>
       <artifactId>am24j.commons</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>am24j</groupId>
+      <groupId>com.github.avgustinmm</groupId>
       <artifactId>am24j.inject</artifactId>
       <version>${project.version}</version>
     </dependency>    
     <dependency>
-      <groupId>am24j</groupId>
+      <groupId>com.github.avgustinmm</groupId>
       <artifactId>am24j.launcher</artifactId>
       <version>${project.version}</version>
     </dependency>
