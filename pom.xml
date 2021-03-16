@@ -7,13 +7,38 @@
   <version>${revision}</version>
   <packaging>pom</packaging>
   
-  <name>Root</name>
+  <name>AM24J</name>
+  <description>Micro-service libraries</description>
+  <url>https://github.com/avgustinmm/am24j</url>
+  
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+  
+  <developers>
+    <developer>
+      <name>Avgustin Marinov</name>
+      <email>avgustinmm@gmail.com</email>
+    </developer>
+  </developers>
+
+  <scm>
+    <developerConnection>scm:git:git://github.com/avgustinmm/am24j.git</developerConnection>
+    <connection>${project.scm.developerConnection}</connection>
+    <url>${project.url}</url>
+  </scm>
   
   <properties>
     <revision>0-SNAPSHOT</revision>
     
     <compiler.plugin.version>3.8.1</compiler.plugin.version>
     <flatten.plugin.version>1.2.5</flatten.plugin.version>
+    <source.plugin.version>3.2.1</source.plugin.version>
+    <javadoc.plugin.version>3.2.0</javadoc.plugin.version>
+    <gpg.plugin.version>1.6</gpg.plugin.version>
     
     <slf4j.version>1.7.30</slf4j.version>
     <log4j2.version>2.14.0</log4j2.version> <!-- org.apache.logging.log4j:log4j-core -->
@@ -30,6 +55,27 @@
   </properties>
   
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${javadoc.plugin.version}</version>
+          <configuration>
+            <source>8</source>
+          </configuration>
+          <executions>
+            <execution>
+              <id>attach-javadocs</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    
     <plugins>
       <plugin>    
         <artifactId>maven-compiler-plugin</artifactId>
@@ -55,6 +101,19 @@
           </execution>
         </executions>
       </plugin>
+      
+      <!--
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.6.7</version>
+        <extensions>true</extensions>
+        <configuration>
+          <serverId>ossrh</serverId>
+          <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+        </configuration>
+      </plugin> -->
     </plugins>
   </build>
   
@@ -91,4 +150,59 @@
     
     <module>am24j.example</module>
   </modules>
+  
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <name>Sonatype snapshots</name>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <name>Sonatype releases</name>
+      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+  
+  <profiles>
+    <profile> 
+      <id>release</id>
+      <build>
+        <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>${source.plugin.version}</version>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <goals>
+                <goal>jar-no-fork</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+        </plugin>
+        
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>${gpg.plugin.version}</version>
+          <executions>
+            <execution>
+              <id>sign-artifacts</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>sign</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

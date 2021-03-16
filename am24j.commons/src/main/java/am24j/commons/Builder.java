@@ -31,8 +31,8 @@ import io.vertx.core.json.JsonObject;
  * Injecting is made as follows. For every key finds (orderly) a method:
  * <ol>
  * <li>standard  setter, e.g. setXyz(type) and inject</li>
- * <li>optimized setter, e.g.  xyz(type) and inject/li>
- * <li>standard time setter, e.g.  setXyz(number, TimeUnit)/li>
+ * <li>optimized setter, e.g.  xyz(type) and inject</li>
+ * <li>standard time setter, e.g.  setXyz(number, TimeUnit)</li>
  * <li>optimized time setter, e.g.  xyz(number, TimeUnit)</li>
  * </ol>
  * , then if value is a json object:

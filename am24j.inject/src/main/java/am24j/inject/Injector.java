@@ -145,6 +145,25 @@ public class Injector {
     return this;
   }
 
+  public Injector bind(final Type type, final Object instance) {
+    return bind(Key.of(type), instance);
+  }
+  public Injector bind(final Class<?> type, final Object instance) {
+    return bind(Key.of(type), instance);
+  }
+  public Injector bind(final Type type, final Provider<?> provider) {
+    return bind(Key.of(type), provider);
+  }
+  public Injector bind(final Class<?> type, final Provider<?> provide) {
+    return bind(Key.of(type), provide);
+  }
+  public Injector bind(final Type type, final Class<?> clazz) {
+    return bind(Key.of(type), clazz);
+  }
+  public Injector bind(final Class<?> type, final Class<?> clazz) {
+    return bind(Key.of(type), clazz);
+  }
+
   public <T> T getInstance(final Key key) {
     log.info("[{}] Resolving instnace ...", key);
     try {

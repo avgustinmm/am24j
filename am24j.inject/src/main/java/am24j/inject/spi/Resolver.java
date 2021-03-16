@@ -27,7 +27,6 @@ import am24j.inject.Injector.Point;
 /**
  * Resolves object instance based on key and injection point
  *
- * @param <T> type of the object
  * @author avgustinmm
  */
 public interface Resolver {

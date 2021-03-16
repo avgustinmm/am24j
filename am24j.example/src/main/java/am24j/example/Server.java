@@ -36,7 +36,7 @@ import io.grpc.Metadata;
 import io.vertx.core.http.HttpServerRequest;
 
 /**
- * Bootrstrap a server with Vertx base runtime, http & gRPC server with Hello World direct / JaxRS and RPC services
+ * Bootstrap a server with Vertx base runtime, http &amp; gRPC server with Hello World direct / JaxRS and RPC services
  *
  * @author avgustinmm
  */

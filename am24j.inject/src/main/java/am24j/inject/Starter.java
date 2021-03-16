@@ -22,7 +22,7 @@ import am24j.inject.Injector.Key;
 import am24j.inject.Interceptors.AutoCloseableHandler;
 
 /**
- * Suppoerts default composition of application
+ * Supports default composition of application
  *
  * @author avgustinmm
  */
@@ -83,7 +83,7 @@ public class Starter implements AutoCloseable {
    * Start an application by resolving (using {@link Injector} the classes passed as arguments.
    *
    * @param compClasses classes to be resolved
-   * @throws Exception if an exception occur
+   * @return return created starter
    */
   public static Starter start(final Class<?>... compClasses) {
     return new Starter(compClasses);
