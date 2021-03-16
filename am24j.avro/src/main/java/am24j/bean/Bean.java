@@ -37,7 +37,7 @@ import io.vertx.core.json.JsonObject;
 /**
  * Interface that may be used by bean in order to get som useful mehotds
  *
- * @param T type of the bean
+ * @param <T> type of the bean
  * @author avgustinmm
  */
 public class Bean<T> {

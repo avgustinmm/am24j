@@ -62,7 +62,7 @@ public class GRPCTest extends BaseTest {
           new JsonObject()
             .put("usePlaintext", true)
             .put(ServerVerticle.HOST, "localhost")
-            .put(ServerVerticle.PORT,  1000)),
+            .put(ServerVerticle.PORT,  1700)),
       sVertx);
     client = new Client(
       new DeploymentOptions()
@@ -70,7 +70,7 @@ public class GRPCTest extends BaseTest {
           new JsonObject()
             .put("usePlaintext", true)
             .put(ClientVerticle.HOST, "localhost")
-            .put(ClientVerticle.PORT,  1000)),
+            .put(ClientVerticle.PORT,  1700)),
         cVertx);
     service = client.service(() -> "user:pass", IService.class);
   }

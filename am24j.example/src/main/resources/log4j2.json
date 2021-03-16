@@ -16,7 +16,7 @@
       },
       "logger": [{
 	      "name": "am24j",
-	      "level": "debug",
+	      "level": "info",
 	      "additivity": "false",
           "AppenderRef": [{ "ref": "Console"}]
 	      }]
