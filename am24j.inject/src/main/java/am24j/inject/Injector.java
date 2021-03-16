@@ -176,6 +176,13 @@ public class Injector {
     }
   }
 
+  public <T> T getInstance(final Type type) {
+    return getInstance(Key.of(type));
+  }
+  public <T> T getInstance(final Class<?> type) {
+    return getInstance(Key.of(type));
+  }
+
   @Override
   public String toString() {
     return "Injector (Resolvers: " + resolvers + ", interceptors: " + interceptors + ")";
