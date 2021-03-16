@@ -1,4 +1,4 @@
-# AM24j
+# AM24j [![javadoc](https://javadoc.io/badge2/com.github.avgustinmm/am24j/javadoc.svg)](https://javadoc.io/doc/com.github.avgustinmm/am24j)
 
 ### Overview
 **am24j** project aim is to provide basic utilities and framework that could help application  developers to start their rich feature projects 
