@@ -25,7 +25,7 @@ jobs:
     - name: Build with Maven
       run: mvn clean install -Pcoverage
       
-    - name: Ipload CodeCov
+    - name: Upload CodeCov
       uses: codecov/codecov-action@v1
       with:
         files: ./**/target/site/jacoco/jacoco.xml
