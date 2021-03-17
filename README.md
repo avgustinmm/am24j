@@ -1,7 +1,6 @@
 [![javadoc](https://javadoc.io/badge2/com.github.avgustinmm/am24j/javadoc.svg)](https://javadoc.io/doc/com.github.avgustinmm/am24j)
 [![CI](https://github.com/avgustinmm/am24j/actions/workflows/main.yml/badge.svg)](https://github.com/avgustinmm/am24j/actions/workflows/main.yml)
-[![codecov.io](https://codecov.io/gh/avgustinmm/am24/branch/master/graphs/badge.svg?)]
-(https://app.codecov.io/gh/avgustinmm/am24j/)
+[![codecov.io](https://codecov.io/gh/avgustinmm/am24/branch/master/graphs/badge.svg?)](https://app.codecov.io/gh/avgustinmm/am24j/)
 
 # AM24j 
 
