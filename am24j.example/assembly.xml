@@ -19,9 +19,10 @@
       <outputDirectory>/</outputDirectory>
       <useProjectArtifact>false</useProjectArtifact>
       <scope>runtime</scope>
-      <includes><include>com.github.avgustinmm:am24j.launcher</include></includes>
+      <includes>
+        <include>com.github.avgustinmm:am24j.launcher</include>
+      </includes>
       <unpack>true</unpack>
     </dependencySet>
   </dependencySets>
-      
 </assembly>
