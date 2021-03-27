@@ -54,5 +54,12 @@
       <artifactId>am24j.vrt</artifactId>
       <version>${project.version}</version>
     </dependency>
+    
+    <dependency>
+      <groupId>com.github.avgustinmm</groupId>
+      <artifactId>am24j.inject</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

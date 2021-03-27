@@ -49,11 +49,13 @@
       <groupId>com.github.avgustinmm</groupId>
       <artifactId>am24j.inject</artifactId>
       <version>${project.version}</version>
-    </dependency>    
+      <optional>true</optional> <!-- Only if ConfigResolver is used -->
+    </dependency>
     <dependency>
       <groupId>com.github.avgustinmm</groupId>
       <artifactId>am24j.launcher</artifactId>
       <version>${project.version}</version>
+      <optional>true</optional> <!-- Only if ShallLauncher is used -->
     </dependency>
     
     <dependency>

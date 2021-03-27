@@ -24,7 +24,7 @@ import am24j.inject.Starter;
 import am24j.rpc.ServiceImpl;
 import am24j.rpc.http.HttpTest.TestAuthVerfier;
 import am24j.rpc.http.Server;
-import am24j.rt.config.Config;
+import am24j.rt.config.ConfigResolver;
 import am24j.vertx.VertxInstance;
 import am24j.vertx.http.Http;
 import io.vertx.core.Vertx;
@@ -47,7 +47,7 @@ public class HttpIoCTest extends BaseTest {
   @BeforeClass
   public static void before() {
     sStarter = Starter.start(
-      Config.class,
+      ConfigResolver.class,
       // vertx
       VertxInstance.class,
       // service

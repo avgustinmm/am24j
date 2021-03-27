@@ -21,7 +21,6 @@ import javax.inject.Singleton;
 
 import com.hazelcast.core.HazelcastInstance;
 
-import am24j.inject.annotation.Provides;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
 
@@ -29,15 +28,15 @@ import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
  * @author avgustinmm
  */
 @Singleton
-public class HZCluster extends HazelcastClusterManager {
+public class HZCluster extends HazelcastClusterManager implements Provider<ClusterManager> {
 
   @Inject
   public HZCluster(final HazelcastInstance hazelcast) {
     super(hazelcast);
   }
 
-  @Provides
-  public Provider<ClusterManager> getCM() {
-    return () -> this;
+  @Override
+  public ClusterManager get() {
+    return this;
   }
 }

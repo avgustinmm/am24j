@@ -26,7 +26,7 @@ import am24j.inject.Starter;
 import am24j.rpc.Auth;
 import am24j.rpc.AuthVerfier;
 import am24j.rpc.grpc.Common;
-import am24j.rt.config.Config;
+import am24j.rt.config.ConfigResolver;
 import am24j.vertx.HZCluster;
 import am24j.vertx.Shell;
 import am24j.vertx.VertxInstance;
@@ -44,28 +44,29 @@ public class Server {
 
   public static void main(final String[] args) throws Exception {
     Starter.start(
-        Config.class,
+      ConfigResolver.class,
 
-        am24j.rt.hz.HZInstance.class,
-        HZCluster.class,
+      am24j.rt.hz.HZInstance.class,
+      HZCluster.class,
 
-        VertxInstance.class,
+      VertxInstance.class,
 
-        Shell.class,
+      Shell.class,
 
-        JaxRS.class,
-        DirectHttp.class,
-        RPCImpl.class,
+      JaxRS.class,
+      DirectHttp.class,
+      RPCImpl.class,
 
-        RestEasy.class,
-        Http.class,
+      RestEasy.class,
+      Http.class,
 
-        GRPCAuth.class,
+      GRPCAuth.class,
 
-        BasicAuth.class,
+      BasicAuth.class,
 
-        am24j.rpc.grpc.Server.class,
-        am24j.rpc.http.Server.class);
+      am24j.rpc.grpc.Server.class,
+      am24j.rpc.http.Server.class);
+
     final String httpPort = Ctx.intProp("node.id", 0) == 0 ? "" : ":8" + Ctx.intProp("node.id", 0);
     final String rpcClientConf = Ctx.intProp("node.id", 0) == 0 ? "" :  " -Dnode.id=" + Ctx.intProp("node.id", 0);
     System.out.println("Could get Hello World HTTP service via browser:");
