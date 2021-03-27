@@ -15,13 +15,14 @@
  */
 package am24j.inject;
 
+import java.util.Optional;
+
 import javax.inject.Inject;
 
 import org.junit.Assert;
 import org.junit.Test;
 
 import am24j.inject.Injector.Key;
-import am24j.inject.annotation.Nullable;
 
 public class NullableTest {
 
@@ -36,11 +37,6 @@ public class NullableTest {
   }
 
   @Test(expected = InjectException.class)
-  public void nullableWithNullDisableNullableAnnotatio () {
-    Assert.assertNotNull(Injector.newInstance(null, new Class<?>[0]).getInstance(Key.of(Null.class)));
-  }
-
-  @Test(expected = InjectException.class)
   public void nonNullableWithNull() {
     Assert.assertNotNull(Injector.newInstance().getInstance(Key.of(NonNull.class)));
   }
@@ -50,11 +46,10 @@ public class NullableTest {
     Assert.assertNotNull(Injector.newInstance().bind(Key.of(Arg.class), new Arg(" ")).getInstance(Key.of(NonNull.class)));
   }
 
-  @Nullable
   public static class Null {
 
     @Inject
-    public Null(@Nullable final Arg arg) {}
+    public Null(final Optional<Arg> arg) {}
   }
 
   public static class NonNull {

@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.inject.Inject;
@@ -41,7 +40,6 @@ import javax.inject.Singleton;
 import org.slf4j.Logger;
 
 import am24j.commons.Ctx;
-import am24j.inject.annotation.Nullable;
 import am24j.inject.spi.Interceptor;
 import am24j.inject.spi.Resolver;
 
@@ -59,27 +57,17 @@ public class Injector {
   private final List<BindListener> bindListeners = new ArrayList<>();
 
   private final Map<Key, Provider<Object>> bindings = new HashMap<>();
-  private final Class<?>[] nullableAnnotations;
 
-  private Injector(final Logger log, final Class<?>[] nullableAnnotations) {
+  private Injector(final Logger log) {
     this.log = log == null ? Ctx.logger("Injector") : log;
-    this.nullableAnnotations = nullableAnnotations == null ? new Class<?>[] {Nullable.class} : nullableAnnotations;
   }
 
   public static Injector newInstance() {
     return newInstance((Logger)null);
   }
 
-  public static Injector newInstance(final Class<? extends Annotation>[] nullableAnnotations) {
-    return newInstance(null, nullableAnnotations);
-  }
-
   public static Injector newInstance(final Logger log) {
-    return newInstance(log, null);
-  }
-
-  public static Injector newInstance(final Logger log, final Class<?>[] nullableAnnotations) {
-    final Injector injector = new Injector(log, nullableAnnotations);
+    final Injector injector = new Injector(log);
     injector.bind(Key.of(Injector.class), injector);
     return injector;
   }
@@ -128,16 +116,7 @@ public class Injector {
   public Injector bind(final Key key, final Class<?> clazz) {
     log.info("Bind an class: {} -> {}", key, clazz);
     // TODO - check if no binding (configuration may allow overriding)
-    Provider<Object> newProvider;
-    try {
-      newProvider = getInstanceApplySingleton(Key.of(clazz), Optional.empty());
-    } catch (final InjectException e) {
-      if (nullable(clazz.getAnnotations())) {
-        newProvider = () -> null; // do not bind null values
-      } else {
-        throw e;
-      }
-    }
+    final Provider<Object> newProvider = getInstanceApplySingleton(Key.of(clazz), Optional.empty());
     bindings.put(key, newProvider);
     for (final BindListener bindListener : bindListeners) {
       bindListener.bound(key, newProvider, this);
@@ -315,18 +294,21 @@ public class Injector {
         obj = iConstr.newInstance();
       } else {
         log.debug("[{}][{}] injector constructor: {}", key, clazz.getName(), iConstr);
-        final Class<?>[] paramTypes = iConstr.getParameterTypes();
         final Annotation[][] paramAnnotations = iConstr.getParameterAnnotations();
         final Object[] args = new Object[types.length];
         for (int i = 0; i < args.length; i++) {
           final int iF = i;
-          args[i] = getInstance(
-            Key.of(types[i], qualifier(paramAnnotations[i], () -> "constructor " + iConstr + " param " + iF)),
-            Optional.of(Point.of(iConstr, i, this::nullable)));
-          if (args[i] != null && !paramTypes[i].isAssignableFrom(args[i].getClass())) {
-            log.error("[{}][{}] Constructor {}'s parameter {} is of type {} but resolved object is of type {}!", key, clazz.getName(), iConstr, i, paramTypes[i], args[i].getClass());
-            throw InjectException.of("Constructor " + iConstr + "'s param " + i + " is of type " + paramTypes[i] + " but resolved object is of type " + args[i].getClass().getName() + "!");
+          final boolean optional = Utils.isOptional(types[i]);
+          final Type type = optional ? Utils.optionalType(types[i]) : types[i];
+          final Object arg = getInstance(
+            Key.of(type, qualifier(paramAnnotations[i], () -> "constructor " + iConstr + " param " + iF)),
+            Optional.of(Point.of(iConstr, i, optional)));
+          final Class<?> paramType = Utils.clazz(type);
+          if (arg != null && !paramType.isAssignableFrom(arg.getClass())) {
+            log.error("[{}][{}] Constructor {}'s parameter {} is of type {} but resolved object is of type {}!", key, clazz.getName(), iConstr, i, paramType.getName(), arg.getClass().getName());
+            throw InjectException.of("Constructor " + iConstr + "'s param " + i + " is of type " + paramType.getName() + " but resolved object is of type " + arg.getClass().getName() + "!");
           }
+          args[i] = optional ? Optional.ofNullable(arg) : arg;
         }
         obj = iConstr.newInstance(args);
       }
@@ -340,9 +322,12 @@ public class Injector {
   private <T extends S, S> T injectFields(final Key key, final Class<S> clazz, final T obj) throws IllegalArgumentException, IllegalAccessException {
     for (final Field field : clazz.getDeclaredFields()) {
       if (field.getAnnotation(Inject.class) != null) {
+        final Type genericType = field.getGenericType();
+        final boolean optional = Utils.isOptional(genericType);
+        final Type type = optional ? Utils.optionalType(genericType)  : genericType;
         final Object value = getInstance(
-          Key.of(field.getGenericType(), qualifier(field.getAnnotations(), () -> "field " + field)),
-          Optional.of(Point.of(field, obj, this::nullable)));
+          Key.of(type, qualifier(field.getAnnotations(), () -> "field " + field)),
+          Optional.of(Point.of(field, obj, optional)));
         if (value != null && !field.getType().isAssignableFrom(value.getClass())) {
           log.error("[{}][{}] Field {} is of type {} but resolved object is of type {}!", key, clazz.getName(), field, field.getType(), value.getClass());
           throw InjectException.of("Field " + field + " is of type " + field.getType() + " but resolved object is of type " + value.getClass().getName() + "!");
@@ -375,18 +360,21 @@ public class Injector {
             if (types == null || types.length == 0) {
               method.invoke(obj);
             } else {
-              final Class<?>[] paramTypes = method.getParameterTypes();
               final Annotation[][] paramAnnotations = method.getParameterAnnotations();
               final Object[] args = new Object[types.length];
               for (int i = 0; i < args.length; i++) {
                 final int iF = i;
-                args[i] = getInstance(
-                  Key.of(types[i], qualifier(paramAnnotations[i], () -> "method " + method + " param " + iF)),
-                  Optional.of(Point.of(method, i, obj, this::nullable)));
-                if (args[i] != null && !paramTypes[i].isAssignableFrom(args[i].getClass())) {
-                  log.error("[{}][{}] Method {}'s parameter {} is of type {} but resolved object is of type {}!", key, clazz.getName(), method, i, paramTypes[i], args[i].getClass());
-                  throw InjectException.of("Method " + method + "'s param " + i + " is of type " + paramTypes[i] + " but resolved object is of type " + args[i].getClass().getName() + "!");
+                final boolean optional = Utils.isOptional(types[i]);
+                final Type type = optional ? Utils.optionalType(types[i]) : types[i];
+                final Object arg = getInstance(
+                  Key.of(type, qualifier(paramAnnotations[i], () -> "method " + method + " param " + iF)),
+                  Optional.of(Point.of(method, i, obj, optional)));
+                final Class<?> paramType = Utils.clazz(type);
+                if (args[i] != null && !paramType.isAssignableFrom(args[i].getClass())) {
+                  log.error("[{}][{}] Method {}'s parameter {} is of type {} but resolved object is of type {}!", key, clazz.getName(), method, i, paramType.getName(), arg.getClass().getName());
+                  throw InjectException.of("Method " + method + "'s param " + i + " is of type " + paramType.getName() + " but resolved object is of type " + arg.getClass().getName() + "!");
                 }
+                args[i] = optional ? Optional.ofNullable(arg) : arg;
               }
               method.invoke(obj, args);
             }
@@ -452,17 +440,6 @@ public class Injector {
     }
     sb.append(")");
     return sb.toString();
-  }
-
-  private boolean nullable(final Annotation[] annotations) {
-    for (final Annotation annotation : annotations) {
-      for (final Class<?> nullableAnnotation : nullableAnnotations) {
-        if (nullableAnnotation.equals(annotation.annotationType())) {
-          return true;
-        }
-      }
-    }
-    return false;
   }
 
   public static class Key {
@@ -533,16 +510,16 @@ public class Injector {
       this.obj = obj;
     }
 
-    private static Point of(final Method method, final int index, final Object obj, final Function<Annotation[], Boolean> nullableTest) {
-      return new Point(method, index, nullableTest.apply(method.getParameterAnnotations()[index]), obj);
+    private static Point of(final Method method, final int index, final Object obj, final boolean nullable) {
+      return new Point(method, index, nullable, obj);
     }
 
-    private static <T> Point of(final Constructor<T> constr, final int index, final Function<Annotation[], Boolean> nullableTest) {
-      return new Point(constr, index, nullableTest.apply(constr.getParameterAnnotations()[index]), null);
+    private static <T> Point of(final Constructor<T> constr, final int index, final boolean nullable) {
+      return new Point(constr, index, nullable, null);
     }
 
-    private static Point of(final Field field, final Object obj, final Function<Annotation[], Boolean> nullableTest) {
-      return new Point(field, -1, nullableTest.apply(field.getAnnotations()), obj);
+    private static Point of(final Field field, final Object obj, final boolean nullable) {
+      return new Point(field, -1, nullable, obj);
     }
 
     public Object obj() {

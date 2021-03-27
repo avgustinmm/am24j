@@ -35,11 +35,10 @@ public class Client {
   }
 
   public static void main(final String[] args) throws Exception {
-    try (final Starter starter = Starter.start(new Class<?>[] {
+    try (final Starter starter = Starter.start(
         Config.class,
         VertxInstance.class,
-        am24j.rpc.grpc.Client.class
-      })) {
+        am24j.rpc.grpc.Client.class)) {
       // bind RPCInterface service in injector
       starter.injector().bind(
         Key.of(RPCInterface.class),

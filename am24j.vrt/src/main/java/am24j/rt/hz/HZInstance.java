@@ -30,7 +30,6 @@ import com.hazelcast.core.HazelcastInstance;
 
 import am24j.commons.Builder;
 import am24j.commons.Ctx;
-import am24j.inject.annotation.Provides;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -39,7 +38,6 @@ import io.vertx.core.json.JsonObject;
  * @author avgustinmm
  */
 @Singleton
-@Provides
 public class HZInstance implements Provider<HazelcastInstance>, AutoCloseable {
 
   private static final Logger LOG = Ctx.logger("Hazelcast");

@@ -43,30 +43,29 @@ import io.vertx.core.http.HttpServerRequest;
 public class Server {
 
   public static void main(final String[] args) throws Exception {
-    Starter.start(new Class<?>[] {
-      Config.class,
+    Starter.start(
+        Config.class,
 
-      am24j.rt.hz.HZInstance.class,
-      HZCluster.class,
+        am24j.rt.hz.HZInstance.class,
+        HZCluster.class,
 
-      VertxInstance.class,
+        VertxInstance.class,
 
-      Shell.class,
+        Shell.class,
 
-      JaxRS.class,
-      DirectHttp.class,
-      RPCImpl.class,
+        JaxRS.class,
+        DirectHttp.class,
+        RPCImpl.class,
 
-      RestEasy.class,
-      Http.class,
+        RestEasy.class,
+        Http.class,
 
-      GRPCAuth.class,
+        GRPCAuth.class,
 
-      BasicAuth.class,
+        BasicAuth.class,
 
-      am24j.rpc.grpc.Server.class,
-      am24j.rpc.http.Server.class,
-    });
+        am24j.rpc.grpc.Server.class,
+        am24j.rpc.http.Server.class);
     final String httpPort = Ctx.intProp("node.id", 0) == 0 ? "" : ":8" + Ctx.intProp("node.id", 0);
     final String rpcClientConf = Ctx.intProp("node.id", 0) == 0 ? "" :  " -Dnode.id=" + Ctx.intProp("node.id", 0);
     System.out.println("Could get Hello World HTTP service via browser:");

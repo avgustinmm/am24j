@@ -23,8 +23,6 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import am24j.inject.annotation.Nullable;
-import am24j.inject.annotation.Provides;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -35,15 +33,14 @@ import io.vertx.core.spi.cluster.ClusterManager;
  * @author avgustinmm
  */
 @Singleton
-@Provides
 public class VertxInstance implements Provider<Vertx>, AutoCloseable {
 
   private final Vertx vertx;
 
   @Inject
-  public VertxInstance(@Named("vertx.json") final VertxOptions options, @Nullable final ClusterManager clusterManeger) {
+  public VertxInstance(@Named("vertx.json") final VertxOptions options, final Optional<ClusterManager> clusterManeger) {
     this.vertx =
-      Optional.ofNullable(clusterManeger)
+      clusterManeger
         .map(cm -> {
           final CompletableFuture<Vertx> future = new CompletableFuture<>();
           Vertx.clusteredVertx(options.setClusterManager(cm), handler(future));

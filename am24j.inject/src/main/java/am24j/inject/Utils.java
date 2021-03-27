@@ -21,6 +21,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -136,5 +137,17 @@ class Utils {
       }
     }
     return types;
+  }
+
+  static boolean isOptional(final Type type) {
+    return clazz(type) == Optional.class;
+  }
+
+  static Type optionalType(final Type type) {
+    if (type instanceof ParameterizedType) {
+      return ((ParameterizedType)type).getActualTypeArguments()[0];
+    } else {
+      return Object.class;
+    }
   }
 }
