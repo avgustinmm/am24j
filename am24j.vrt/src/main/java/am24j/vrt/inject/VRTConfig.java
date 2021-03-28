@@ -13,17 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.rt.config;
+package am24j.vrt.inject;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -33,25 +29,26 @@ import org.slf4j.Logger;
 
 import am24j.commons.Ctx;
 import am24j.commons.Types;
+import am24j.config.Config;
 import am24j.inject.InjectException;
 import am24j.inject.Injector;
 import am24j.inject.spi.Resolver;
 import io.vertx.core.json.JsonObject;
 
 /**
- * Adds {@link Injector}'s {@link ConfigResolver} that resolves named (having @ {@link Named} annotation)
+ * Adds {@link Injector}'s {@link VRTConfig} that resolves named (having @ {@link Named} annotation)
  * {@link JsonObject} and objects having single {@link JsonObject} argument constructors.
  * Implicitly would instantiate config
  *
  * @author avgustinmm
  */
-public class ConfigResolver {
+public class VRTConfig {
 
   private static final Logger LOG = Ctx.logger("Config");
 
   @SuppressWarnings("rawtypes")
   @Inject
-  public ConfigResolver(final Config config, final Injector injector) {
+  public VRTConfig(final Config config, final Injector injector) {
     injector.add((key, point, inj) -> {
       if (key.type() instanceof Class) {
         final Class clazz = (Class)key.type();
@@ -74,16 +71,9 @@ public class ConfigResolver {
             }
 
             // try config file - support JsonObject and object with JsonObject constructor
-            final byte[] configFile = Ctx.resource(name);
-            if (configFile != null) {
-              final File target = new File(config.tmpDir(), "efective_" + name);
-              target.deleteOnExit();
-              try (final OutputStream os = new FileOutputStream(target)) {
-                os.write(configFile);
-              }
-              Config.applyEnv(target);
-
-              final JsonObject json = new JsonObject(new String(Files.readAllBytes(target.toPath()), StandardCharsets.UTF_8));
+            final byte[] configResource = config.resource(name);
+            if (configResource != null) {
+              final JsonObject json = new JsonObject(new String(configResource, StandardCharsets.UTF_8));
 
               if (clazz == JsonObject.class) {
                 return () -> json;

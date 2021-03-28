@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.rt.hz;
+package am24j.hz;
 
 import java.io.IOException;
 

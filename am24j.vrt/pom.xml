@@ -38,24 +38,6 @@
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j-impl</artifactId>
       <version>${log4j2.version}</version>
-    </dependency>    
-    
-    <dependency>
-      <groupId>com.github.avgustinmm</groupId>
-      <artifactId>am24j.commons</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.github.avgustinmm</groupId>
-      <artifactId>am24j.inject</artifactId>
-      <version>${project.version}</version>
-      <optional>true</optional> <!-- Only if ConfigResolver is used -->
-    </dependency>
-    <dependency>
-      <groupId>com.github.avgustinmm</groupId>
-      <artifactId>am24j.launcher</artifactId>
-      <version>${project.version}</version>
-      <optional>true</optional> <!-- Only if ShallLauncher is used -->
     </dependency>
     
     <dependency>
@@ -79,6 +61,31 @@
       <groupId>org.jboss.resteasy</groupId>
       <artifactId>resteasy-vertx</artifactId>
       <version>${resteasy.version}</version> 
+    </dependency>
+    
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+      <version>${spring.version}</version>
+      <optional>true</optional> <!-- Only if spring  is used -->
+    </dependency>
+    
+    <dependency>
+      <groupId>com.github.avgustinmm</groupId>
+      <artifactId>am24j.commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.avgustinmm</groupId>
+      <artifactId>am24j.inject</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional> <!-- Only if ConfigResolver is used -->
+    </dependency>
+    <dependency>
+      <groupId>com.github.avgustinmm</groupId>
+      <artifactId>am24j.launcher</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional> <!-- Only if ShallLauncher is used -->
     </dependency>
     
     <dependency>

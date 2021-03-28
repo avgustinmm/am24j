@@ -20,8 +20,8 @@ import javax.inject.Inject;
 import am24j.example.hellowold.RPCInterface;
 import am24j.inject.Injector.Key;
 import am24j.inject.Starter;
-import am24j.rt.config.ConfigResolver;
 import am24j.vertx.VertxInstance;
+import am24j.vrt.inject.VRTConfig;
 
 public class Client {
 
@@ -36,7 +36,7 @@ public class Client {
 
   public static void main(final String[] args) throws Exception {
     try (final Starter starter = Starter.start(
-        ConfigResolver.class,
+        VRTConfig.class,
         VertxInstance.class,
         am24j.rpc.grpc.Client.class)) {
       // bind RPCInterface service in injector

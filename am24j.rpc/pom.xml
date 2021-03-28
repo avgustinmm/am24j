@@ -56,6 +56,13 @@
     </dependency>
     
     <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+      <version>${spring.version}</version>
+      <optional>true</optional> <!-- Only if spring  is used -->
+    </dependency>
+    
+    <dependency>
       <groupId>com.github.avgustinmm</groupId>
       <artifactId>am24j.inject</artifactId>
       <version>${project.version}</version>

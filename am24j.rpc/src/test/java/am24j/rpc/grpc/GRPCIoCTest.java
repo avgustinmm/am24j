@@ -26,8 +26,8 @@ import am24j.rpc.BaseTest;
 import am24j.rpc.IService;
 import am24j.rpc.ServiceImpl;
 import am24j.rpc.grpc.GRPCTest.TestAuthVerfier;
-import am24j.rt.config.ConfigResolver;
 import am24j.vertx.VertxInstance;
+import am24j.vrt.inject.VRTConfig;
 
 /**
  * Tests build using inversion of control (with DI) app composition
@@ -46,7 +46,7 @@ public class GRPCIoCTest extends BaseTest {
   @BeforeClass
   public static void before() {
     sStarter = Starter.start(
-      ConfigResolver.class,
+      VRTConfig.class,
       // vertx
       VertxInstance.class,
       // wire verifiers
@@ -56,7 +56,7 @@ public class GRPCIoCTest extends BaseTest {
       // gRPC server - when services are registered
       Server.class);
     cStarter = Starter.start(
-      ConfigResolver.class,
+      VRTConfig.class,
       // vertx
       VertxInstance.class);
     service = cStarter.injector().<Client>getInstance(Key.of(Client.class)).service(() -> "user:pass", IService.class);

@@ -18,40 +18,52 @@ package am24j.example;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.FullyQualifiedAnnotationBeanNameGenerator;
+
 import am24j.commons.Ctx;
+import am24j.config.Config;
 import am24j.example.hellowold.DirectHttp;
 import am24j.example.hellowold.JaxRS;
 import am24j.example.hellowold.RPCImpl;
 import am24j.hz.HZInstance;
-import am24j.inject.Starter;
 import am24j.rpc.Auth;
 import am24j.rpc.AuthVerfier;
 import am24j.rpc.grpc.Common;
+import am24j.rpc.spring.GRPCConfig;
 import am24j.vertx.HZCluster;
 import am24j.vertx.Shell;
 import am24j.vertx.VertxInstance;
 import am24j.vertx.http.Http;
 import am24j.vertx.http.RestEasy;
-import am24j.vrt.inject.VRTConfig;
+import am24j.vrt.spring.VRTConfgi;
 import io.grpc.Metadata;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.ext.shell.ShellVerticle;
 
 /**
  * Bootstrap a server with Vertx base runtime, http &amp; gRPC server with Hello World direct / JaxRS and RPC services
  *
  * @author avgustinmm
  */
+
 public class Server {
 
+  @SuppressWarnings("resource")
   public static void main(final String[] args) throws Exception {
-    Starter.start(
-      VRTConfig.class,
+    final AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+    ctx.setBeanNameGenerator(FullyQualifiedAnnotationBeanNameGenerator.INSTANCE);
+    ctx.register(
+      Config.class,
+      VRTConfgi.class,
+      GRPCConfig.class,
 
       HZInstance.class,
       HZCluster.class,
 
       VertxInstance.class,
 
+      ShellVerticle.class, // not bound by default ??
       Shell.class,
 
       JaxRS.class,
@@ -66,7 +78,9 @@ public class Server {
       BasicAuth.class,
 
       am24j.rpc.grpc.Server.class,
-      am24j.rpc.http.Server.class);
+      am24j.rpc.http.Server.class
+    );
+    ctx.refresh();
 
     final String httpPort = Ctx.intProp("node.id", 0) == 0 ? "" : ":8" + Ctx.intProp("node.id", 0);
     final String rpcClientConf = Ctx.intProp("node.id", 0) == 0 ? "" :  " -Dnode.id=" + Ctx.intProp("node.id", 0);

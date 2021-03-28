@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.rt.config;
+package am24j.config;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -73,8 +73,24 @@ public class Config {
     }
   }
 
+  public synchronized byte[] resource(final String name) throws IOException {
+    final byte[] configFile = Ctx.resource(name);
+    if (configFile != null) {
+      final File target = new File(tmpDir(), "efective_" + name);
+      target.deleteOnExit();
+      try (final OutputStream os = new FileOutputStream(target)) {
+        os.write(configFile);
+      }
+      Config.applyEnv(target);
+
+      return Files.readAllBytes(target.toPath());
+    } else {
+      return null;
+    }
+  }
+
   private File tmpDir;
-  synchronized File tmpDir() throws IOException {
+  private synchronized File tmpDir() throws IOException {
     if (tmpDir == null) {
       tmpDir = Ctx.readWriteFile(".tmp" + System.currentTimeMillis());
       if (!tmpDir.mkdirs()) {
@@ -85,7 +101,7 @@ public class Config {
     return tmpDir;
   }
 
-  static void applyEnv(final File file) throws IOException {
+  private static void applyEnv(final File file) throws IOException {
     final String str = new String(Files.readAllBytes(file.toPath()));
     final String applied = applyEnv(str);
     if (str != applied) {
