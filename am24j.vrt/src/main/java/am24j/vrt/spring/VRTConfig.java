@@ -39,12 +39,12 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
 
 @Configuration
-public class VRTConfgi {
+public class VRTConfig {
 
   private final Config config;
 
   @Inject
-  public VRTConfgi(final Config config) {
+  public VRTConfig(final Config config) {
     this.config = config;
   }
 

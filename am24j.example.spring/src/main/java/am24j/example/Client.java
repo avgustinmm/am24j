@@ -27,7 +27,7 @@ import am24j.config.Config;
 import am24j.example.hellowold.RPCInterface;
 import am24j.rpc.spring.GRPCConfig;
 import am24j.vertx.VertxInstance;
-import am24j.vrt.spring.VRTConfgi;
+import am24j.vrt.spring.VRTConfig;
 
 @Configuration
 public class Client {
@@ -51,7 +51,7 @@ public class Client {
       ctx.setBeanNameGenerator(FullyQualifiedAnnotationBeanNameGenerator.INSTANCE);
       ctx.register(
         Config.class,
-        VRTConfgi.class,
+        VRTConfig.class,
         GRPCConfig.class,
 
         VertxInstance.class,

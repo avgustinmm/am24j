@@ -36,7 +36,7 @@ import am24j.vertx.Shell;
 import am24j.vertx.VertxInstance;
 import am24j.vertx.http.Http;
 import am24j.vertx.http.RestEasy;
-import am24j.vrt.spring.VRTConfgi;
+import am24j.vrt.spring.VRTConfig;
 import io.grpc.Metadata;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.shell.ShellVerticle;
@@ -55,7 +55,7 @@ public class Server {
     ctx.setBeanNameGenerator(FullyQualifiedAnnotationBeanNameGenerator.INSTANCE);
     ctx.register(
       Config.class,
-      VRTConfgi.class,
+      VRTConfig.class,
       GRPCConfig.class,
 
       HZInstance.class,
@@ -88,7 +88,7 @@ public class Server {
     System.out.println("  http://localhost" + httpPort + "/direct/hello[?name=<name>]");
     System.out.println("  http://localhost" + httpPort + "/jaxrs/hello[?name=<name>]");
     System.out.println("Or, start gRPC call to Hello World gRPC RPC call with starting in cmd:");
-    System.out.println("  java" + rpcClientConf + " -jar example-app.jar am24j.example.Client");
+    System.out.println("  java -cp example-app.jar -Dloader.main=am24j.example.Client " + rpcClientConf + " org.springframework.boot.loader.PropertiesLauncher");
     System.out.println("Or, start gRPC call to Hello World HTTP RPC GET call via browser!");
     System.out.println("  http://localhost" + httpPort + "/rpc/hellowprld_1.0.0/hello[?arg_0=<name>]");
   }

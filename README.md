@@ -38,6 +38,7 @@ streaming and possible by directional streaming too)
 with it dependencies in single jar (without unpacking dependencies), 
 launched by Launcher, composed by components using Injector, Vertx runtime with pluggable HTTP 
 raw and JAX--RS components
+* **Example Spring application** - simple module providing an example how Vertx runtime and RPC could be packed as a Spting application 
 
 ### Details / Usage
 #### Launcher
@@ -214,3 +215,15 @@ the implementations of service must be annotated with _am24j.rpc.Remote_
 
 The example for Starter above shows how, for instance, a RPC server may be bootstrapped. 
 For more in detail use of RPC you may take a look at RPC tests.
+
+#### Example - Spring
+Simple module providing an example how Vertx runtime and RPC could be packed as a Spting application 
+
+To run examole get the built artifact _example-app.jar_ and start it with:
+```
+java -jar example-app.jar
+```
+Then, as with example app (based on am24j injector) you could access server as server app will guide you. The http access URLs are the same as am24j injector example, while gRPC java client could be started with:
+```
+java -cp example-app.jar -Dloader.main=am24j.example.Client  org.springframework.boot.loader.PropertiesLauncher
+```
