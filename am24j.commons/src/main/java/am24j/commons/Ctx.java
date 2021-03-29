@@ -15,20 +15,34 @@
  */
 package am24j.commons;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.vertx.core.json.JsonObject;
 
 /**
  * Provides context for an application. The context includes: <br>
@@ -88,6 +102,21 @@ public class Ctx {
   }
 
   private static final ThreadLocal<Map<Class<?>, ?>> THREAD_CTX = new ThreadLocal<>();
+
+  private static final Pattern PATTERN = Pattern.compile("\\$\\{([^:}]+)(?::-([^}]*))?\\}");
+  private static final Set<String> SUBSTITUTED = new HashSet<>();
+  static {
+    try {
+      // supports json, prs, properties ...
+      final String file = prop("ctx.sysProps", "sys.json");
+      final String sysProps = substitutedResource(file);
+      if (sysProps != null) {
+        toMap(sysProps, file).forEach((key, value) -> System.setProperty(key, String.valueOf(value)));
+      }
+    } catch (final IOException e) {
+      throw new IllegalStateException("Failed to apply configured system properties!", e);
+    }
+  }
 
   private Ctx() {};
 
@@ -169,6 +198,32 @@ public class Ctx {
     }
   }
 
+  public static synchronized String substitutedResource(final String name) throws IOException {
+    final File target = new File(efectiveDir(), name);
+    if (SUBSTITUTED.contains(name)) {
+      if (target.isFile()) {
+        return new String(Files.readAllBytes(target.toPath()), StandardCharsets.UTF_8);
+      } else {
+        return null;
+      }
+    }
+    try {
+      final byte[] configFile = resource(name);
+      if (configFile != null) {
+        try (final OutputStream os = new FileOutputStream(target)) {
+          os.write(configFile);
+        }
+        applyEnv(target);
+
+        return new String(Files.readAllBytes(target.toPath()), StandardCharsets.UTF_8);
+      } else {
+        return null;
+      }
+    } finally {
+      SUBSTITUTED.add(name);
+    }
+  }
+
   public static File readOnlyFile(final String fileName) {
     return new File(RO_DIR, fileName);
   }
@@ -201,6 +256,14 @@ public class Ctx {
     return Optional.ofNullable((T)ctxMap.put(key, ctx));
   }
 
+  /**
+   * Substitute context in string. For instance if string is "x${y:=5}" and no y property, then string is "x5", if
+   * y is 10 then - "x10"
+   */
+  public static String substitute(final String str) {
+    return replace(str, PATTERN, matcher -> prop(matcher.group(1)).orElse(matcher.groupCount() > 1 ? matcher.group(2) : ""));
+  }
+
   private static Optional<String> get(final String envStyle, final String sysStyle) {
     String value = System.getenv(envStyle);
     if (value != null) {
@@ -216,6 +279,73 @@ public class Ctx {
     }
     value = System.getProperty(envStyle);
     return Optional.ofNullable(value);
+  }
+
+  private static String replace(final String str, final Pattern replaceTarget, final Function<Matcher, String> replacer) {
+    final Matcher matcher = replaceTarget.matcher(str);
+    if (matcher.find()) {
+      final StringBuilder sb = new StringBuilder();
+      int start = 0;
+      do {
+        sb.append(str.substring(start, matcher.start()));
+        sb.append(replacer.apply(matcher));
+        start = matcher.end();
+      } while (matcher.find());
+      sb.append(str.substring(start));
+      return sb.toString();
+    } else {
+      return str;
+    }
+  }
+
+  private static File effectiveDir;
+  private static File efectiveDir() throws IOException {
+    if (effectiveDir == null) {
+      final String effectoveDirStr = prop("ctx.resource.effectiveDir", null);
+      if (effectiveDir == null || effectoveDirStr.length() == 0) {
+        effectiveDir = Files.createTempDirectory("effective_").toFile();
+      } else {
+        if (new File(effectoveDirStr).isAbsolute()) { // absolute
+          effectiveDir = new File(effectoveDirStr);
+        } else {
+          effectiveDir = readWriteFile(effectoveDirStr);
+        }
+        if (!effectiveDir.mkdirs()) {
+          throw new IllegalStateException("Can't create effective dir: " + effectiveDir.getPath() + "!");
+        }
+      }
+    }
+    return effectiveDir;
+  }
+
+  private static void applyEnv(final File file) throws IOException {
+    final String str = new String(Files.readAllBytes(file.toPath()));
+    final String applied = substitute(str);
+    if (str != applied) {
+      Files.copy(new ByteArrayInputStream(applied.getBytes(StandardCharsets.UTF_8)), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+    }
+  }
+
+  private static Map<String, Object> toMap(final String str, final String file) throws IOException {
+    final int index = file.lastIndexOf('.');
+    if (index == -1) throw new IllegalArgumentException("Only files with extensions could be converted to a maps!");
+    final String ext = file.substring(index + 1).toLowerCase();
+    if ("prs".equals(ext) || "properties".equals(ext)) {
+      final Properties props = new Properties();
+      try (final InputStream fis = new ByteArrayInputStream(file.getBytes(StandardCharsets.UTF_8))) {
+        props.load(fis);
+      }
+      final Map<String, Object> map = new HashMap<>();
+      for (final Enumeration<Object> e = props.keys(); e.hasMoreElements();) {
+        final String key = (String)e.nextElement();
+        map.put(key, props.getProperty(key));
+      }
+      return map;
+    } else if ("json".equals(ext)) {
+      return new JsonObject(str).getMap();
+    } else {
+      throw new IllegalArgumentException("Only files with extensions prs, properties or json could be converted to a map!");
+    }
   }
 
   public static class RunAs {

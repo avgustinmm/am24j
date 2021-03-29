@@ -22,7 +22,6 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.FullyQualifiedAnnotationBeanNameGenerator;
 
 import am24j.commons.Ctx;
-import am24j.config.Config;
 import am24j.example.hellowold.DirectHttp;
 import am24j.example.hellowold.JaxRS;
 import am24j.example.hellowold.RPCImpl;
@@ -46,7 +45,6 @@ import io.vertx.ext.shell.ShellVerticle;
  *
  * @author avgustinmm
  */
-
 public class Server {
 
   @SuppressWarnings("resource")
@@ -54,7 +52,6 @@ public class Server {
     final AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
     ctx.setBeanNameGenerator(FullyQualifiedAnnotationBeanNameGenerator.INSTANCE);
     ctx.register(
-      Config.class,
       VRTConfig.class,
       GRPCConfig.class,
 

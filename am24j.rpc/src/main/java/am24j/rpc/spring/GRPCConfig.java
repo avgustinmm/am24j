@@ -16,29 +16,20 @@
 package am24j.rpc.spring;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import am24j.commons.Ctx;
 import am24j.commons.RExc;
-import am24j.config.Config;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.json.JsonObject;
 
 @Configuration
 public class GRPCConfig {
-
-  private final Config config;
-
-  @Inject
-  public GRPCConfig(final Config config) {
-    this.config = config;
-  }
 
   @Named("grpc_server.json")
   @Bean
@@ -54,7 +45,7 @@ public class GRPCConfig {
 
   private Optional<String> resource(final String name) {
     try {
-      return Optional.ofNullable(config.resource(name)).map(resource -> new String(resource, StandardCharsets.UTF_8));
+      return Optional.ofNullable(Ctx.substitutedResource(name));
     } catch (final IOException e) {
       throw RExc.toRuntime(e);
     }

@@ -23,7 +23,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FullyQualifiedAnnotationBeanNameGenerator;
 
-import am24j.config.Config;
 import am24j.example.hellowold.RPCInterface;
 import am24j.rpc.spring.GRPCConfig;
 import am24j.vertx.VertxInstance;
@@ -50,7 +49,6 @@ public class Client {
     try (final AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext()) {
       ctx.setBeanNameGenerator(FullyQualifiedAnnotationBeanNameGenerator.INSTANCE);
       ctx.register(
-        Config.class,
         VRTConfig.class,
         GRPCConfig.class,
 

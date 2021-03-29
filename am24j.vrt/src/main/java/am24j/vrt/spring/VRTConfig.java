@@ -16,10 +16,8 @@
 package am24j.vrt.spring;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -29,8 +27,8 @@ import org.springframework.context.annotation.Configuration;
 
 import com.hazelcast.core.HazelcastInstance;
 
+import am24j.commons.Ctx;
 import am24j.commons.RExc;
-import am24j.config.Config;
 import am24j.hz.HZInstance;
 import am24j.vertx.VertxInstance;
 import io.vertx.core.DeploymentOptions;
@@ -40,13 +38,6 @@ import io.vertx.core.json.JsonObject;
 
 @Configuration
 public class VRTConfig {
-
-  private final Config config;
-
-  @Inject
-  public VRTConfig(final Config config) {
-    this.config = config;
-  }
 
   @Named("hazelcast.json")
   @Bean
@@ -88,7 +79,7 @@ public class VRTConfig {
 
   private Optional<String> resource(final String name) {
     try {
-      return Optional.ofNullable(config.resource(name)).map(resource -> new String(resource, StandardCharsets.UTF_8));
+      return Optional.ofNullable(Ctx.substitutedResource(name));
     } catch (final IOException e) {
       throw RExc.toRuntime(e);
     }

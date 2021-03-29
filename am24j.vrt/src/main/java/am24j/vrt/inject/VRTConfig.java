@@ -19,7 +19,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -29,7 +28,6 @@ import org.slf4j.Logger;
 
 import am24j.commons.Ctx;
 import am24j.commons.Types;
-import am24j.config.Config;
 import am24j.inject.InjectException;
 import am24j.inject.Injector;
 import am24j.inject.spi.Resolver;
@@ -48,7 +46,7 @@ public class VRTConfig {
 
   @SuppressWarnings("rawtypes")
   @Inject
-  public VRTConfig(final Config config, final Injector injector) {
+  public VRTConfig(final Injector injector) {
     injector.add((key, point, inj) -> {
       if (key.type() instanceof Class) {
         final Class clazz = (Class)key.type();
@@ -71,9 +69,9 @@ public class VRTConfig {
             }
 
             // try config file - support JsonObject and object with JsonObject constructor
-            final byte[] configResource = config.resource(name);
+            final String configResource = Ctx.substitutedResource(Ctx.substitute(name));
             if (configResource != null) {
-              final JsonObject json = new JsonObject(new String(configResource, StandardCharsets.UTF_8));
+              final JsonObject json = new JsonObject(configResource);
 
               if (clazz == JsonObject.class) {
                 return () -> json;
