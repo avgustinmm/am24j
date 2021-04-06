@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -128,6 +129,14 @@ public class Server implements Http.HttpHandler {
           }
         }
       }, vExecutor);
+  }
+
+  public Map<String, Message> info() {
+    final Map<String, Message> map = new HashMap<>();
+    methodsMap.forEach((k, v) -> {
+      map.put(k, v.aMessage);
+    });
+    return map;
   }
 
   private Stream<MethodHandler> methodDescriptors(final Object service) {

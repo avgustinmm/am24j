@@ -29,6 +29,8 @@ import io.grpc.Metadata.Key;
 import io.grpc.MethodDescriptor;
 import io.grpc.MethodDescriptor.Marshaller;
 import io.grpc.MethodDescriptor.MethodType;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 /**
  * Commons
@@ -66,6 +68,11 @@ public class Common {
     public Object[] parse(final InputStream is) {
       return Proto.decodeReq(reqSchema, is, false);
     }
+
+    @Override
+    public String toString() {
+      return "Request: " + new JsonObject(reqSchema.toString()).encodePrettily();
+    }
   }
 
   private static class RespMarshaller implements Marshaller<Object> {
@@ -86,6 +93,11 @@ public class Common {
     @Override
     public Object parse(final InputStream is) {
       return Proto.decodeResp(respSchema, errorSchema, is, false);
+    }
+
+    @Override
+    public String toString() {
+      return "Response:: " + new JsonObject(respSchema.toString()).encodePrettily() + "\nError: " + new JsonArray(errorSchema.toString()).encodePrettily();
     }
   }
 }

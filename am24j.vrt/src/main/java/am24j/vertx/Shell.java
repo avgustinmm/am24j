@@ -15,15 +15,10 @@
  */
 package am24j.vertx;
 
-import java.lang.reflect.InvocationTargetException;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-import org.slf4j.Logger;
-
-import am24j.commons.Ctx;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.ext.shell.ShellVerticle;
@@ -36,17 +31,8 @@ import io.vertx.ext.shell.ShellVerticle;
 @Singleton
 public class Shell extends Component<ShellVerticle> {
 
-  private static final Logger LOG = Ctx.logger("Shell");
-
   @Inject
   public Shell(final ShellVerticle verticle, @Named("shell.json") final DeploymentOptions options, final Vertx vertx) {
     super(verticle, options, vertx);
-    try {
-      Class.forName(Shell.class.getPackage().getName() + ".ShellLauncher").getMethod("start", Vertx.class).invoke(null, vertx);
-    } catch (final ClassNotFoundException e) {
-      LOG.debug("No ShellLauncher class.");
-    } catch (final IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException  | SecurityException e) {
-      LOG.error("Failed to register ShellLauncher!", e);
-    }
   }
 }

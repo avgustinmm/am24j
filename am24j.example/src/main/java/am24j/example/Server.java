@@ -26,10 +26,12 @@ import am24j.hz.HZInstance;
 import am24j.inject.Starter;
 import am24j.rpc.Auth;
 import am24j.rpc.AuthVerfier;
+import am24j.rpc.grpc.Cmd;
 import am24j.rpc.grpc.Common;
 import am24j.vertx.HZCluster;
 import am24j.vertx.Shell;
 import am24j.vertx.VertxInstance;
+import am24j.vertx.cmd.LauncherCmd;
 import am24j.vertx.http.Http;
 import am24j.vertx.http.RestEasy;
 import am24j.vrt.inject.VRTConfig;
@@ -53,6 +55,7 @@ public class Server {
       VertxInstance.class,
 
       Shell.class,
+      LauncherCmd.class,
 
       JaxRS.class,
       DirectHttp.class,
@@ -66,7 +69,10 @@ public class Server {
       BasicAuth.class,
 
       am24j.rpc.grpc.Server.class,
-      am24j.rpc.http.Server.class);
+      am24j.rpc.http.Server.class,
+
+      Cmd.class,
+      am24j.rpc.http.Cmd.class);
 
     final String httpPort = Ctx.intProp("node.id", 0) == 0 ? "" : ":8" + Ctx.intProp("node.id", 0);
     final String rpcClientConf = Ctx.intProp("node.id", 0) == 0 ? "" :  " -Dnode.id=" + Ctx.intProp("node.id", 0);
@@ -77,6 +83,11 @@ public class Server {
     System.out.println("  java" + rpcClientConf + " -jar example-app.jar am24j.example.Client");
     System.out.println("Or, start gRPC call to Hello World HTTP RPC GET call via browser!");
     System.out.println("  http://localhost" + httpPort + "/rpc/hellowprld_1.0.0/hello[?arg_0=<name>]");
+
+    System.out.println("\nShhell is available via telnet:");
+    System.out.println("  telnet localhost 230" + Ctx.intProp("node.id", 0));
+    System.out.println("Or, via http:");
+    System.out.println("  http://localhost:800" + Ctx.intProp("node.id", 0) + "/shell.html");
   }
 
   public static class GRPCAuth implements AuthVerfier<Metadata> {

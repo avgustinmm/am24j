@@ -17,6 +17,7 @@ package am24j.rpc.grpc;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -73,6 +74,8 @@ public class Server implements AutoCloseable {
   private final List<AuthVerfier<Metadata>> authVerfiers;
   private final Vertx vertx;
 
+  private final List<ServerServiceDefinition> ssdList;
+
   private final Future<String> deployment;
 
   @Inject
@@ -84,7 +87,7 @@ public class Server implements AutoCloseable {
     LOG.info("Start (options: {}, servicesL {})", options.toJson(), services);
     this.authVerfiers = authVerfiers;
     this.vertx = vertx;
-    final List<ServerServiceDefinition> ssdList =
+    ssdList =
       services.stream()
         .flatMap(this::serviceDefinitions)
         .collect(Collectors.toList());
@@ -106,6 +109,11 @@ public class Server implements AutoCloseable {
       vertx.undeploy(deploymentID);
       return null;
     });
+  }
+
+
+  public List<ServerServiceDefinition> ssdList() {
+    return new ArrayList<>(ssdList);
   }
 
   private Stream<ServerServiceDefinition> serviceDefinitions(final Object service) {

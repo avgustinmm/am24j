@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package am24j.vertx;
+package am24j.vertx.cmd;
+
+import javax.inject.Inject;
 
 import am24j.jcl.JarClassLoader;
 import am24j.launch.Launcher;
@@ -24,9 +26,10 @@ import io.vertx.ext.shell.command.CommandRegistry;
 /**
  * @author avgustinmm
  */
-public class ShellLauncher {
+public class LauncherCmd {
 
-  public static void start(final Vertx vertx) {
+  @Inject
+  public LauncherCmd(final Vertx vertx) {
     final CommandBuilder cb = CommandBuilder.command("launcher");
     cb.processHandler(process -> {
       final JarClassLoader jarClassLoader = Launcher.jarClassLoader();
@@ -34,7 +37,7 @@ public class ShellLauncher {
         if (jarClassLoader == null) {
           process.write("No jarClassLoader avaialble!\n");
         } else {
-          process.write("--------------- USAGE ----------------\n");
+          process.write("--------------- Usage ----------------\n");
           process.write(jarClassLoader.toString());
           process.write("\n");
         }
