@@ -309,11 +309,11 @@ public class Server implements Http.HttpHandler {
       return request.body().map(body -> {
         LOG.debug("Request body: {}", body);
         return body;
-      }).map(body -> Proto.decodeReq(aMessage.getRequest(), new ByteArrayInputStream(body.getBytes()), json));
+      }).map(body -> Proto.decodeReq(aMessage.getRequest(), Proto.requestTypes(method), new ByteArrayInputStream(body.getBytes()), json));
     }
 
     private String stream(final Object resp, final boolean json) {
-      return new String(Proto.encodeResp(aMessage.getResponse(), aMessage.getErrors(), resp, json), StandardCharsets.UTF_8);
+      return new String(Proto.encodeResp(aMessage.getResponse(), aMessage.getErrors(), Proto.responsType(method), resp, json), StandardCharsets.UTF_8);
     }
   }
 }

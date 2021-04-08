@@ -24,10 +24,17 @@ import java.io.ObjectOutputStream;
 import org.junit.Assert;
 import org.junit.Test;
 
+import am24j.bean.BeanTest.B;
 import am24j.bean.BeanTest.BExtern;
 import am24j.bean.BeanTest.BSerial;
 
 public class BeanBuildableTest {
+
+  private final B b = new B();
+  {
+    b.a(14);
+    b.str("dfsdf");
+  }
 
   @Test
   public void hash() {
@@ -37,9 +44,6 @@ public class BeanBuildableTest {
     Assert.assertEquals(b.hashCode(), b2.hashCode());
     Assert.assertNotEquals(b2.hashCode(), b3.hashCode());
     Assert.assertNotEquals(b.hashCode(), b3.hashCode());
-    System.out.println(b.hashCode());
-    System.out.println(b2.hashCode());
-    System.out.println(b3.hashCode());
   }
 
   @Test
@@ -55,7 +59,8 @@ public class BeanBuildableTest {
   @Test
   public void str() {
     final Buildable b = Buildable.builder().a(14).b("dfsdf").build();
-    System.out.println(b);
+    final String str = b.toString();
+    BeanTest.assertValidJson(str);
   }
 
   @Test
@@ -84,7 +89,7 @@ public class BeanBuildableTest {
   public void serializeBuildable() throws IOException, ClassNotFoundException {
     final BSerial b = new BSerial();
     b.a(14);
-    b.b("dfsdf");
+    b.b(this.b);
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     final ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -97,7 +102,7 @@ public class BeanBuildableTest {
   public void externalizeBuildable() throws IOException, ClassNotFoundException {
     final BExtern b = new BExtern();
     b.a(14);
-    b.b("dfsdf");
+    b.b(this.b);
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     final ObjectOutputStream oos = new ObjectOutputStream(baos);

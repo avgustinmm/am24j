@@ -92,16 +92,6 @@ public class AvroTest {
       Assert.assertEquals(bean, decoded);
     }
   }
-//
-//  public static void main(final String[] args) {
-//    final Schema schema = Avro.forClaxx(BeanTest.Buildable.class);
-//    System.out.println(schema.toString());
-//    final Schema schemaReq = Avro.forClaxx(BeanTest.BuildableReq.class);
-//    System.out.println(schemaReq.toString());
-//    // cyclic refs - not supporetd - how to do?
-////    final Schema schemaCyclicReq = Avro.forClaxx(CyclicReq1.class);
-////    System.out.println(schemaCyclicReq.toString());
-//  }
 
   public static class CyclicReq1 {
 

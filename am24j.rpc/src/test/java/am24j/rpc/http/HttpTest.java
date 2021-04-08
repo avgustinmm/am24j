@@ -41,6 +41,8 @@ import io.vertx.core.json.JsonObject;
  */
 public class HttpTest extends BaseTest {
 
+  private static final int PORT = 1081;
+
   static {
     Log4j2Config.setUp(Level.INFO, Level.TRACE, "am24j.rpc.http");
   }
@@ -65,7 +67,7 @@ public class HttpTest extends BaseTest {
       new JsonObject()
         .put("ssl", false)
         .put("defaultHost", "localhost")
-        .put("defaultPort", 1081),
+        .put("defaultPort", PORT),
       cVertx);
     service = client.service(() -> "user:pass", IService.class);
     http =
@@ -74,7 +76,7 @@ public class HttpTest extends BaseTest {
         new DeploymentOptions().setConfig(
           new JsonObject()
             .put(ServerVerticle.HOST, "localhost")
-            .put(ServerVerticle.PORT, 1081)),
+            .put(ServerVerticle.PORT, PORT)),
         sVertx);
   }
 

@@ -24,58 +24,85 @@ import java.io.ObjectOutputStream;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import am24j.avro.Avro.Encoding;
 
 public class BeanTest {
 
+  private final B b = new B();
+  private final B b2 = new B();
+  private final B b3 = new B();
+  private final B b4 = new B();
+  {
+    b.a(14);
+    b.str("dfsdf");
+    b2.a(14);
+    b2.str("dfsdf");
+    b3.a(142);
+    b3.str("dfsdddf");
+    b4.a(142);
+    b4.str("dfsdf");
+  }
+
+  private final BOfB bOfB = new BOfB();
+  private final BOfB bOfB2 = new BOfB();
+  private final BOfB bOfB3 = new BOfB();
+  private final BOfB bOfB4 = new BOfB();
+  {
+    bOfB.a(14);
+    bOfB.b(b);
+    bOfB2.a(14);
+    bOfB2.b(b2);
+    bOfB3.a(142);
+    bOfB3.b(b3);
+    bOfB4.a(142);
+    bOfB4.b(b);
+  }
+
   @Test
   public void hash() {
-    final B b = new B();
-    b.a(14);
-    b.b("dfsdf");
-    final B b2 = new B();
-    b2.a(14);
-    b2.b("dfsdf");
-    final B b3 = new B();
-    b3.a(142);
-    b3.b("dfsdddf");
     Assert.assertEquals(b.hashCode(), b2.hashCode());
     Assert.assertNotEquals(b2.hashCode(), b3.hashCode());
     Assert.assertNotEquals(b.hashCode(), b3.hashCode());
-    System.out.println(b.hashCode());
-    System.out.println(b2.hashCode());
-    System.out.println(b3.hashCode());
+    Assert.assertNotEquals(b2.hashCode(), b4.hashCode());
+    Assert.assertNotEquals(b.hashCode(), b4.hashCode());
+
+    Assert.assertEquals(bOfB.hashCode(), bOfB2.hashCode());
+    Assert.assertNotEquals(bOfB2.hashCode(), bOfB3.hashCode());
+    Assert.assertNotEquals(bOfB.hashCode(), bOfB3.hashCode());
+    Assert.assertNotEquals(bOfB2.hashCode(), bOfB4.hashCode());
+    Assert.assertNotEquals(bOfB.hashCode(), bOfB4.hashCode());
   }
 
   @Test
   public void equals() {
-    final B b = new B();
-    b.a(14);
-    b.b("dfsdf");
-    final B b2 = new B();
-    b2.a(14);
-    b2.b("dfsdf");
-    final B b3 = new B();
-    b3.a(142);
-    b3.b("dfsdddf");
     Assert.assertEquals(b, b2);
     Assert.assertNotEquals(b2, b3);
     Assert.assertNotEquals(b, b3);
+    Assert.assertNotEquals(b, b4);
+
+    Assert.assertEquals(bOfB, bOfB2);
+    Assert.assertNotEquals(bOfB2, bOfB3);
+    Assert.assertNotEquals(bOfB, bOfB3);
+    Assert.assertNotEquals(bOfB, bOfB4);
   }
 
   @Test
   public void str() {
     final B b = new B();
     b.a(14);
-    b.b("dfsdf");
-    System.out.println(b);
+    b.str("dfsdf");
+    final String str = b.toString();
+    assertValidJson(str);
   }
 
   @Test
   public void serialize() throws IOException, ClassNotFoundException {
     final BSerial b = new BSerial();
     b.a(14);
-    b.b("dfsdf");
+    b.b(this.b);
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     final ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -88,7 +115,7 @@ public class BeanTest {
   public void externalize() throws IOException, ClassNotFoundException {
     final BExtern b = new BExtern();
     b.a(14);
-    b.b("dfsdf");
+    b.b(this.b);
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     final ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -101,7 +128,7 @@ public class BeanTest {
   public void serializeBuildable() throws IOException, ClassNotFoundException {
     final BSerial b = new BSerial();
     b.a(14);
-    b.b("dfsdf");
+    b.b(this.b);
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     final ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -114,7 +141,7 @@ public class BeanTest {
   public void externalizeBuildable() throws IOException, ClassNotFoundException {
     final BExtern b = new BExtern();
     b.a(14);
-    b.b("dfsdf");
+    b.b(this.b);
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     final ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -123,10 +150,19 @@ public class BeanTest {
     Assert.assertEquals(b, new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())).readObject());
   }
 
+  static void assertValidJson(final String str) {
+    try {
+      final JsonParser parser = new ObjectMapper().getFactory().createParser(str);
+      while (parser.nextToken() != null);
+    } catch (final Exception e) {
+      Assert.fail("Invalid json! " + e);
+    }
+  }
+
   public static class B extends Bean<B> {
 
     private int a;
-    private String b;
+    private String str;
 
     public B() {}
 
@@ -138,11 +174,35 @@ public class BeanTest {
       this.a = a;
     }
 
-    public String b() {
+    public String str() {
+      return str;
+    }
+
+    public void str(final String str) {
+      this.str = str;
+    }
+  }
+
+  public static class BOfB extends Bean<B> {
+
+    private int a;
+    private B b;
+
+    public BOfB() {}
+
+    public int a() {
+      return a;
+    }
+
+    public void a(final int a) {
+      this.a = a;
+    }
+
+    public B b() {
       return b;
     }
 
-    public void b(final String b) {
+    public void b(final B b) {
       this.b = b;
     }
   }
@@ -152,7 +212,7 @@ public class BeanTest {
     private static final long serialVersionUID = 1L;
 
     private int a;
-    private String b;
+    private B b;
 
     public BSerial() {}
 
@@ -164,11 +224,11 @@ public class BeanTest {
       this.a = a;
     }
 
-    public String b() {
+    public B b() {
       return b;
     }
 
-    public void b(final String b) {
+    public void b(final B b) {
       this.b = b;
     }
 
@@ -176,12 +236,20 @@ public class BeanTest {
     public Encoding encoding() {
       return Encoding.Json;
     }
+
+    private void writeObject(final ObjectOutputStream out) throws IOException {
+      super.writeObject0(out);
+    }
+
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+      super.readObject0(in);
+    }
   }
 
   public static class BExtern extends Bean.Extern<BExtern> {
 
     private int a;
-    private String b;
+    private B b;
 
     public BExtern() {}
 
@@ -193,11 +261,11 @@ public class BeanTest {
       this.a = a;
     }
 
-    public String b() {
+    public B b() {
       return b;
     }
 
-    public void b(final String b) {
+    public void b(final B b) {
       this.b = b;
     }
 

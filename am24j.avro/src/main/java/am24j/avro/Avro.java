@@ -32,8 +32,7 @@ import org.apache.avro.SchemaBuilder.EnumBuilder;
 import org.apache.avro.SchemaBuilder.FieldAssembler;
 import org.apache.avro.SchemaBuilder.RecordBuilder;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericDatumReader;
-import org.apache.avro.generic.GenericDatumWriter;
+import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
@@ -41,6 +40,8 @@ import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.specific.SpecificDatumReader;
+import org.apache.avro.specific.SpecificDatumWriter;
 
 import am24j.bean.Struct;
 import am24j.bean.Struct.Property;
@@ -75,6 +76,55 @@ public class Avro {
     return SCHEMAS_NULLABLE.computeIfAbsent(type,  t -> SchemaBuilder.nullable().type(forType(type)));
   }
 
+  // wrap an java object to object able to be serialized with Avro (beans are converted to records, in-depth)
+  public static Object wrap(final Object obj, final Type type) {
+    if (obj == null) {
+      return null;
+    }
+    if (obj instanceof Throwable) {
+      return obj;
+    }
+    final Class<?> clazz = clazz(type);
+    if (clazz == boolean.class || clazz == Integer.class ||
+        clazz == byte.class || clazz == Byte.class ||
+        clazz == short.class || clazz == Short.class ||
+        clazz == int.class || clazz == Integer.class ||
+        clazz == long.class || clazz == Long.class ||
+        clazz == float.class || clazz == Float.class ||
+        clazz == double.class || clazz == Double.class ||
+        clazz == byte[].class ||
+        clazz == String.class ||
+        clazz.isEnum()) {
+      return obj;
+    } else { // bean
+      final Schema schema = forType(type);
+      final Struct<Object> bean = Struct.forType(type);
+      final GenericRecord record = new GenericData.Record(schema);
+      final Property[] props = bean.properties();
+      final Object[] values = bean.values(obj);
+      for (int i = 0; i < props.length; i++) {
+        record.put(props[i].name(), wrap(values[i], props[i].type()));
+      }
+      return record;
+    }
+  }
+
+  // ubwrap an Avro data (e.g. records ...) to java object to object
+  public static Object unwrap(final Object data, final Type type) {
+    if (data instanceof Record) {
+      final Record record = (Record)data;
+      final Struct<Object> bean = Struct.forType(type);
+      final Property[] props = bean.properties();
+      final Object[] values = new Object[props.length];
+      for (int i = 0; i < props.length; i++) {
+        values[i] = unwrap(record.get(props[i].name()), props[i].type());
+      }
+      return bean.build(values);
+    } else {
+      return data; // not a bean
+    }
+  }
+
   public static void write(final Object obj, final Encoding encoding, final OutputStream os) throws IOException {
     write(obj, obj.getClass(), encoding, os);
   }
@@ -85,16 +135,13 @@ public class Avro {
 
   public static void write(final Object obj, final Type type, final Encoding encoding, final OutputStream os) throws IOException {
     final Schema schema = forType(type);
-    final Struct<Object> bean = Struct.forType(type);
-    final GenericRecord record = new GenericData.Record(schema);
-    final Property[] props = bean.properties();
-    final Object[] values = bean.values(obj);
-    for (int i = 0; i < props.length; i++) {
-      record.put(props[i].name(), values[i]);
-    }
     final Encoder encoder = encoding == Encoding.Binary ? EncoderFactory.get().binaryEncoder(os, null) : EncoderFactory.get().jsonEncoder(schema, os);
-    final DatumWriter<GenericRecord> writer = new GenericDatumWriter<>(schema);
-    writer.write(record, encoder);
+    write(obj, schema, type, encoder);
+  }
+
+  public static void write(final Object obj, final Schema schema, final Type type, final Encoder encoder) throws IOException {
+    final DatumWriter<Object> writer = new SpecificDatumWriter<>(schema);
+    writer.write(wrap(obj, type), encoder);
     encoder.flush();
   }
 
@@ -106,24 +153,17 @@ public class Avro {
   }
 
   public static <T> T read(final Type type, final Encoding encoding, final InputStream os) throws IOException {
-    final Struct<T> bean = Struct.forType(type);
-    return bean.build(values(type, encoding, bean, os));
+    final Schema schema = forType(type);
+    final Decoder decoder = encoding == Encoding.Binary ? DecoderFactory.get().binaryDecoder(os, null) : DecoderFactory.get().jsonDecoder(schema, os);
+    return read(schema, type, decoder);
   }
 
-  public static <T> Object[] values(final Type type, final Encoding encoding, final Struct<T> bean, final InputStream os) throws IOException {
-    final Schema schema = forType(type);
-    GenericRecord record = new GenericData.Record(schema);
+  @SuppressWarnings("unchecked")
+  public static <T> T read(final Schema schema, final Type type, final Decoder decoder) throws IOException {
+    final DatumReader<Object> reader = new SpecificDatumReader<>(schema);
+    final Object  data = reader.read(null, decoder);
 
-    final Decoder decoder = encoding == Encoding.Binary ? DecoderFactory.get().binaryDecoder(os, null) : DecoderFactory.get().jsonDecoder(schema, os);
-    final DatumReader<GenericRecord> reader = new GenericDatumReader<>(schema);
-    record = reader.read(record, decoder);
-
-    final Property[] props = bean.properties();
-    final Object[] values = new Object[props.length];
-    for (int i = 0; i < props.length; i++) {
-      values[i] = record.get(props[i].name());
-    }
-    return values;
+    return (T)unwrap(data, type);
   }
 
   public static <T> T decode(final byte[] ba, final Type type, final Encoding encoding) throws IOException {
@@ -217,7 +257,7 @@ public class Avro {
   }
 
   // normalize string to match avro requirements (if needed)
-  public static String norm(final String str) { // TODO
+  private static String norm(final String str) { // TODO
     return str.replace('$', '_').replace('/', '_');
   }
 }

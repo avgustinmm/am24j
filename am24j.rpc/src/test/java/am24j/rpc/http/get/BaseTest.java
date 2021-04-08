@@ -68,7 +68,7 @@ public class BaseTest {
         final List<Object> results = new ArrayList<>();
         final InputStream is = new ByteArrayInputStream(body.getBytes());
         for (int i = size; i-- > 0;) {
-          final Object result = Proto.decodeResp(aMessage.getResponse(), aMessage.getErrors(), JsonReader.wrapper(is), true);
+          final Object result = Proto.decodeResp(aMessage.getResponse(), aMessage.getErrors(), Proto.responsType(method), JsonReader.wrapper(is), true);
           if (result instanceof RPCException) {
             future.completeExceptionally((RPCException)result);
             return Future.succeededFuture();

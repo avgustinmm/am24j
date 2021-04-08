@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.Type;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -103,14 +104,14 @@ public class Client implements AutoCloseable {
           client
             .request(HttpMethod.POST, path)
             .compose(requst -> {
-              final Buffer buff = Buffer.buffer(Proto.encodeReqy(aMessage.getRequest(), realArgs, json));
+              final Buffer buff = Buffer.buffer(Proto.encodeReqy(aMessage.getRequest(), Proto.requestTypes(method), realArgs, json));
               return requst
                 .putHeader("content-type", json ? "application/json" : "avro/binary")
                 .putHeader("content-length", String.valueOf(buff.length()))
                 .send(buff);
             })
             .compose(response -> {
-              final StreamHandler streamHandler = new StreamHandler(aMessage, json, response, subscriber, VertxUtils.ctxExecutor(vertx));
+              final StreamHandler streamHandler = new StreamHandler(aMessage, Proto.responsType(method), json, response, subscriber, VertxUtils.ctxExecutor(vertx));
               subscriber.onSubscribe(streamHandler);
               response.handler(streamHandler).end(ar -> {
                 if (ar.succeeded()) {
@@ -132,7 +133,7 @@ public class Client implements AutoCloseable {
           client
             .request(HttpMethod.POST, path)
             .compose(request -> {
-              final Buffer buff = Buffer.buffer(Proto.encodeReqy(aMessage.getRequest(), args, json));
+              final Buffer buff = Buffer.buffer(Proto.encodeReqy(aMessage.getRequest(), Proto.requestTypes(method), args, json));
               return request
                .putHeader("content-type", json ? "application/json" : "avro/binary")
                .putHeader("content-length", String.valueOf(buff.length()))
@@ -141,7 +142,7 @@ public class Client implements AutoCloseable {
             .compose(HttpClientResponse::body)
             .compose(body -> {
               LOG.debug("Response body: {}", body);
-              final Object reps = Proto.decodeResp(aMessage.getResponse(), aMessage.getErrors(), new ByteArrayInputStream(body.getBytes()), json);
+              final Object reps = Proto.decodeResp(aMessage.getResponse(), aMessage.getErrors(), Proto.responsType(method), new ByteArrayInputStream(body.getBytes()), json);
               if (reps instanceof RPCException) {
                 future.completeExceptionally((RPCException)reps);
               } else {
@@ -164,6 +165,7 @@ public class Client implements AutoCloseable {
   private static class StreamHandler extends InputStream implements Handler<Buffer>, Subscription {
 
     private final Message aMessage;
+    private final Type streamType;
     private final boolean json;
     private final HttpClientResponse response;
     private final Subscriber<Object> subscriber;
@@ -175,8 +177,9 @@ public class Client implements AutoCloseable {
 
     private long requested;
 
-    private StreamHandler(final Message aMessage, final boolean json, final HttpClientResponse response, final Subscriber<Object> subscriber, final Executor vExecutor) {
+    private StreamHandler(final Message aMessage, final Type streamType, final boolean json, final HttpClientResponse response, final Subscriber<Object> subscriber, final Executor vExecutor) {
       this.aMessage = aMessage;
+      this.streamType = streamType;
       this.json = json;
       this.response = response;
       this.subscriber = subscriber;
@@ -195,7 +198,7 @@ public class Client implements AutoCloseable {
         final int bufPos = this.bufPos;
         final int pos = this.pos;
         try {
-          final Object decoded = Proto.decodeResp(aMessage.getResponse(), aMessage.getErrors(), JsonReader.wrapper(this), json);
+          final Object decoded = Proto.decodeResp(aMessage.getResponse(), aMessage.getErrors(), streamType, JsonReader.wrapper(this), json);
           if (decoded instanceof RPCException) {
             subscriber.onError(((RPCException)decoded).toRPC());
           } else {

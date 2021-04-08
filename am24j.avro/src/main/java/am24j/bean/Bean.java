@@ -27,12 +27,9 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 
-import org.apache.avro.Schema;
-
 import am24j.avro.Avro;
 import am24j.avro.Avro.Encoding;
 import am24j.bean.Struct.Property;
-import io.vertx.core.json.JsonObject;
 
 /**
  * Interface that may be used by bean in order to get som useful mehotds
@@ -68,16 +65,14 @@ public class Bean<T> {
 
   @Override
   public String toString() {
-    return toStringB(this);
+    @SuppressWarnings("rawtypes")
+    final Struct struct = Struct.forClass(this.getClass());
+    return toString(this, "  ", struct);
   }
 
   @SuppressWarnings("unchecked")
   public Struct<T> struct() {
     return Struct.forClass((Class<T>)this.getClass());
-  }
-
-  public Schema schema() {
-    return Avro.forClaxx(this.getClass());
   }
 
   @SuppressWarnings("unchecked")
@@ -90,7 +85,7 @@ public class Bean<T> {
     return struct.values((T)this);
   }
 
-  private static String toString(final Object obj) {
+  private static String toString(final Object obj, final String indent) {
     if (obj == null) {
       return "null";
     } else {
@@ -109,25 +104,26 @@ public class Bean<T> {
       } else if (obj instanceof Object[]) {
         return Arrays.asList((Object[])obj).toString();
       } else if (clazz == String.class) {
-        return (String)obj;
+        return "\"".concat((String)obj).concat("\"");
       } else {
-        return toStringB(obj);
+        @SuppressWarnings("rawtypes")
+        final Struct struct = Struct.forClass(obj.getClass());
+        return toString(obj, indent.concat("  "), struct);
       }
     }
   }
 
-  private static String toStringB(final Object obj) {
-    final JsonObject json = new JsonObject();
-    json.put("#type", obj.getClass().getName());
-    @SuppressWarnings("rawtypes")
-    final Struct struct = Struct.forClass(obj.getClass());
+  private static String toString(final Object obj, final String indent, @SuppressWarnings("rawtypes") final Struct struct) {
+    final StringBuilder json = new StringBuilder("{\n");
+    json.append(indent).append("\"#type\": \"").append(obj.getClass().getName()).append("\",\n");
     @SuppressWarnings("unchecked")
     final Object[] values = struct.values(obj);
     final Property[] properties = struct.properties();
     for (int i = 0; i < properties.length; i++) {
-      json.put(properties[i].name(), toString(values[i]));
+      json.append(indent).append("\"").append(properties[i].name()).append("\": ").append(toString(values[i], indent.concat("  "))).append(i == properties.length - 1 ? "\n" : ",\n");
     }
-    return json.encodePrettily();
+    json.append("}");
+    return json.toString();
   }
 
   /**
@@ -144,8 +140,7 @@ public class Bean<T> {
 
     @Override
     public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
-      final Struct<T> struct = struct();
-      final Object[] values = Avro.values(this.getClass(), encoding(), struct, new InputStream() {
+      final T copy = Avro.read(this.getClass(), encoding(), new InputStream() {
 
         @Override
         public int read() throws IOException {
@@ -157,6 +152,8 @@ public class Bean<T> {
           return in.read(b, off, len);
         }
       });
+      final Struct<T> struct = struct();
+      final Object[] values = struct.values(copy);
       final Property[] props = struct.properties();
       for (int i = 0; i < props.length; i++) {
         try {
@@ -181,13 +178,14 @@ public class Bean<T> {
 
     private static final long serialVersionUID = 1L;
 
-    private void writeObject(final ObjectOutputStream out) throws IOException {
+    protected void writeObject0(final ObjectOutputStream out) throws IOException {
       Avro.write(this, encoding(), out);
     }
 
-    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+    protected void readObject0(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+      final T copy = Avro.read(this.getClass(), encoding(), in);
       final Struct<T> struct = struct();
-      final Object[] values = Avro.values(this.getClass(), encoding(), struct, in);
+      final Object[] values = struct.values(copy);
       final Property[] props = struct.properties();
       for (int i = 0; i < props.length; i++) {
         try {

@@ -39,7 +39,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.SchemaBuilder.FieldAssembler;
 import org.apache.avro.SchemaBuilder.RecordBuilder;
-import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.Encoder;
@@ -187,7 +187,7 @@ public class Proto {
       return fAssembler.endRecord();
     });
   }
-  public static byte[] encodeReqy(final Schema reqSchema, final Object[] args, final boolean json) {
+  public static byte[] encodeReqy(final Schema reqSchema, final Type[] types, final Object[] args, final boolean json) {
     try (final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
       final Encoder encoder = json ?
         ENCODER_FACTORY.jsonEncoder(reqSchema, baos, true) :
@@ -195,11 +195,10 @@ public class Proto {
       final List<Schema.Field> params = reqSchema.getFields();
       if (args != null) {
         if (args.length != params.size()) {
-          Thread.dumpStack();
           throw new IllegalArgumentException("Invalid args size! Expect " + params.size() + ", found " + args.length + "!");
         }
         for (int i = 0; i < args.length; i++) {
-          new SpecificDatumWriter<>(params.get(i).schema()).write(args[i], encoder);
+          Avro.write(args[i], params.get(i).schema(), types[i], encoder);
         }
       }
       encoder.flush();
@@ -209,16 +208,16 @@ public class Proto {
     }
   }
 
-  public static Object[] decodeReq(final Schema reqSchema, final InputStream is, final boolean json) {
+  public static Object[] decodeReq(final Schema reqSchema, final Type[] types, final InputStream is, final boolean json) {
     try {
       final Decoder deooder = json ?
         DECODER_FACTORY.jsonDecoder(reqSchema, is) :
         DECODER_FACTORY.binaryDecoder(is, null);
-      final GenericRecord request = (GenericRecord)new SpecificDatumReader<>(reqSchema).read(null, deooder);
+      final Record request = (Record)new SpecificDatumReader<>(reqSchema).read(null, deooder);
       final List<Schema.Field> params = reqSchema.getFields();
       final Object[] args = new Object[params.size()];
       for (int i = 0; i < args.length; i++) {
-        args[i] = request.get(params.get(i).name());
+        args[i] = Avro.unwrap(request.get(params.get(i).name()), types[i]);
       }
       return args;
     } catch (final IOException e) {
@@ -226,11 +225,12 @@ public class Proto {
     }
   }
 
-  public static byte[] encodeResp(final Schema respSchema, final Schema errorSchema, final Object resp, final boolean json) {
+  public static byte[] encodeResp(final Schema respSchema, final Schema errorSchema, final Type type, final Object resp, final boolean json) {
     try (final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
       if (json) {
         return encodeReqy(
           jsonRespScehma(respSchema, errorSchema),
+          new Type[] {type, RPCException.class},
           new Object[] {resp instanceof Exception ? null : resp, resp instanceof Exception ? resp : null},
           json);
       } else {
@@ -250,7 +250,7 @@ public class Proto {
           }
         } else {
           encoder.writeBoolean(false);
-          new SpecificDatumWriter<>(respSchema).write(resp, encoder);
+          Avro.write(resp, respSchema, type, encoder);
         }
         encoder.flush();
       }
@@ -261,10 +261,15 @@ public class Proto {
     }
   }
 
-  public static Object decodeResp(final Schema respSchema, final Schema errorSchema, final InputStream is, final boolean json) {
+  public static Object decodeResp(final Schema respSchema, final Schema errorSchema, final Type type, final InputStream is, final boolean json) {
     try {
       if (json) {
-        final Object[] valueAndError = decodeReq(jsonRespScehma(respSchema, errorSchema), is, true);
+        final Object[] valueAndError =
+          decodeReq(
+            jsonRespScehma(respSchema, errorSchema),
+            new Type[] {type, RPCException.class},
+            is,
+            true);
         return valueAndError[1] == null ? valueAndError[0] : valueAndError[1];
       } else {
         final Decoder deooder = DECODER_FACTORY.binaryDecoder(is, null);
@@ -275,12 +280,43 @@ public class Proto {
           }
           return new am24j.rpc.RPCException(null, value.toString(), null);
         } else {
-          return new SpecificDatumReader<>(respSchema).read(null, deooder);
+          return Avro.read(respSchema, type, deooder);
         }
       }
     } catch (final IOException e) {
       throw new RuntimeException();
     }
+  }
+
+  public static Type[] requestTypes(final Method method) {
+    Type[] types = method.getGenericParameterTypes();
+    if (types.length > 0 && method.getParameterTypes()[types.length - 1] == Subscriber.class) {
+      final Type[] cutLast = new Type[types.length - 1];
+      System.arraycopy(types, 0, cutLast, 0, cutLast.length);
+      types = cutLast;
+    }
+    return types;
+  }
+
+  public static Type responsType(final Method method) {
+    final Type type = method.getGenericReturnType();
+    Type realType = type;
+    if (type instanceof ParameterizedType) {
+      final ParameterizedType pType = (ParameterizedType)type;
+      final Type rawType = pType.getRawType();
+      if (rawType == CompletionStage.class || rawType == CompletableFuture.class) {
+        realType = ((ParameterizedType)type).getActualTypeArguments()[0];
+      }
+    }
+    if (realType == void.class || realType == Void.class) {
+      final Type[] paramTypes = method.getGenericParameterTypes();
+      if (paramTypes.length == 0 || method.getParameterTypes()[paramTypes.length - 1] != Subscriber.class) {
+        return null;
+      } else {
+        realType = ((ParameterizedType)paramTypes[paramTypes.length - 1]).getActualTypeArguments()[0];
+      }
+    }
+    return realType;
   }
 
   private static Schema requestSchema(final String namespace, final String name, final Method method, final Collection<Schema> protcolTypes) {
@@ -305,37 +341,6 @@ public class Proto {
     final Schema schema = returnType == null ? Schema.create(Schema.Type.NULL) : Avro.forType(returnType);
     addType(schema, protcolTypes);
     return schema;
-  }
-
-  private static Type[] requestTypes(final Method method) {
-    Type[] types = method.getGenericParameterTypes();
-    if (types.length > 0 && method.getParameterTypes()[types.length - 1] == Subscriber.class) {
-      final Type[] cutLast = new Type[types.length - 1];
-      System.arraycopy(types, 0, cutLast, 0, cutLast.length);
-      types = cutLast;
-    }
-    return types;
-  }
-
-  private static Type responsType(final Method method) {
-    final Type type = method.getGenericReturnType();
-    Type realType = type;
-    if (type instanceof ParameterizedType) {
-      final ParameterizedType pType = (ParameterizedType)type;
-      final Type rawType = pType.getRawType();
-      if (rawType == CompletionStage.class || rawType == CompletableFuture.class) {
-        realType = ((ParameterizedType)type).getActualTypeArguments()[0];
-      }
-    }
-    if (realType == void.class || realType == Void.class) {
-      final Type[] paramTypes = method.getGenericParameterTypes();
-      if (paramTypes.length == 0 || method.getParameterTypes()[paramTypes.length - 1] != Subscriber.class) {
-        return null;
-      } else {
-        realType = ((ParameterizedType)paramTypes[paramTypes.length - 1]).getActualTypeArguments()[0];
-      }
-    }
-    return realType;
   }
 
   private static void addType(final Schema schema, final Collection<Schema> protcolTypes) {

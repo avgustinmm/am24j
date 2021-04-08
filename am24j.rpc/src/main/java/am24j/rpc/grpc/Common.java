@@ -18,11 +18,14 @@ package am24j.rpc.grpc;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 
 import org.apache.avro.Protocol;
 import org.apache.avro.Protocol.Message;
 import org.apache.avro.Schema;
+import org.slf4j.Logger;
 
+import am24j.commons.Ctx;
 import am24j.rpc.avro.Proto;
 import io.grpc.Metadata;
 import io.grpc.Metadata.Key;
@@ -41,32 +44,48 @@ public class Common {
 
   public static final Key<String> WWW_AUTHENTICATE = Key.of("WWW-Authenticate", Metadata.ASCII_STRING_MARSHALLER);
 
+  private static final Logger LOG = Ctx.logger("rpc.grpc.commons");
+
+  private Common() {}
+
   public static MethodDescriptor<Object[], Object> methodDescriptor(final Method method, final Protocol aProto) {
     final Message aMessage = aProto.getMessages().get(Proto.methodName(method));
     return MethodDescriptor.<Object[], Object>newBuilder()
       .setType(Proto.isStream(method) ? MethodType.SERVER_STREAMING : MethodType.UNARY)
       .setFullMethodName(MethodDescriptor.generateFullMethodName(aProto.getName(), aMessage.getName()))
-      .setRequestMarshaller(new ReqMarshaller(aMessage.getRequest()))
-      .setResponseMarshaller(new RespMarshaller(aMessage.getResponse(), aMessage.getErrors()))
+      .setRequestMarshaller(new ReqMarshaller(aMessage.getRequest(), Proto.requestTypes(method)))
+      .setResponseMarshaller(new RespMarshaller(aMessage.getResponse(), aMessage.getErrors(), Proto.responsType(method)))
       .build();
   }
 
   private static class ReqMarshaller implements Marshaller<Object[]> {
 
     private final Schema reqSchema;
+    private final Type[] types;
 
-    private ReqMarshaller(final Schema reqSchema) {
+    private ReqMarshaller(final Schema reqSchema, final Type[] types) {
       this.reqSchema = reqSchema;
+      this.types = types;
     }
 
     @Override
     public InputStream stream(final Object[] args) {
-      return new ByteArrayInputStream(Proto.encodeReqy(reqSchema, args, false));
+      try {
+        return new ByteArrayInputStream(Proto.encodeReqy(reqSchema, types, args, false));
+      } catch (final RuntimeException | Error e) {
+        LOG.error("Failed to stream request: {}!", args, e);
+        throw e;
+      }
     }
 
     @Override
     public Object[] parse(final InputStream is) {
-      return Proto.decodeReq(reqSchema, is, false);
+      try {
+        return Proto.decodeReq(reqSchema, types, is, false);
+      } catch (final RuntimeException | Error e) {
+        LOG.error("Failed to pars request!", e);
+        throw e;
+      }
     }
 
     @Override
@@ -79,20 +98,32 @@ public class Common {
 
     private final Schema respSchema;
     private final Schema errorSchema;
+    private final Type type;
 
-    private RespMarshaller(final Schema respSchema, final Schema errorSchema) {
+    private RespMarshaller(final Schema respSchema, final Schema errorSchema, final Type type) {
       this.respSchema = respSchema;
       this.errorSchema = errorSchema;
+      this.type = type;
     }
 
     @Override
     public InputStream stream(final Object resp) {
-      return new ByteArrayInputStream(Proto.encodeResp(respSchema, errorSchema, resp, false));
+      try {
+        return new ByteArrayInputStream(Proto.encodeResp(respSchema, errorSchema, type, resp, false));
+      } catch (final RuntimeException | Error e) {
+        LOG.error("Failed to stream response: {}!", resp, e);
+        throw e;
+      }
     }
 
     @Override
     public Object parse(final InputStream is) {
-      return Proto.decodeResp(respSchema, errorSchema, is, false);
+      try {
+        return Proto.decodeResp(respSchema, errorSchema, type, is, false);
+      } catch (final RuntimeException | Error e) {
+        LOG.error("Failed to parse response!!", e);
+        throw e;
+      }
     }
 
     @Override
