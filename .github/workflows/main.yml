@@ -32,4 +32,5 @@ jobs:
         flags: unittests
         fail_ci_if_error: false
         verbose: true
+        gcov_prefix: ""
           
