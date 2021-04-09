@@ -30,7 +30,9 @@ import org.apache.avro.Protocol.Message;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
 
+import am24j.commons.Ctx;
 import am24j.commons.JsonReader;
 import am24j.rpc.IService;
 import am24j.rpc.avro.Proto;
@@ -47,6 +49,7 @@ import io.vertx.core.http.HttpMethod;
 @Ignore
 public class BaseTest {
 
+  protected static final Logger LOG = Ctx.logger("rpc.grpc.client");
   private static final Protocol A_PROTO = Proto.protocol(IService.class);
   protected static HttpClient client;
 
@@ -70,6 +73,7 @@ public class BaseTest {
         for (int i = size; i-- > 0;) {
           final Object result = Proto.decodeResp(aMessage.getResponse(), aMessage.getErrors(), Proto.responsType(method), JsonReader.wrapper(is), true);
           if (result instanceof RPCException) {
+            LOG.info("Received RPCException: {}", result);
             future.completeExceptionally((RPCException)result);
             return Future.succeededFuture();
           } else {

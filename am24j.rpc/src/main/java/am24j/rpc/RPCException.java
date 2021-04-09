@@ -44,7 +44,7 @@ public class RPCException extends RuntimeException {
 
   @Override
   public String toString() {
-    return "[" + uuid + "] RPCException: " + getMessage() + " of type " + type + "!";
+    return "[" + getUUID() + "] RPCException: " + getMessage() + " of type " + getType() + "!";
   }
 
   private static final String PREFIX = UUID.randomUUID().toString() + "-";

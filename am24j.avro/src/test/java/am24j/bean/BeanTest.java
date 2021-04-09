@@ -36,13 +36,13 @@ public class BeanTest {
   private final B b3 = new B();
   private final B b4 = new B();
   {
-    b.a(14);
+    b.i(14);
     b.str("dfsdf");
-    b2.a(14);
+    b2.i(14);
     b2.str("dfsdf");
-    b3.a(142);
+    b3.i(142);
     b3.str("dfsdddf");
-    b4.a(142);
+    b4.i(142);
     b4.str("dfsdf");
   }
 
@@ -51,13 +51,13 @@ public class BeanTest {
   private final BOfB bOfB3 = new BOfB();
   private final BOfB bOfB4 = new BOfB();
   {
-    bOfB.a(14);
+    bOfB.i(14);
     bOfB.b(b);
-    bOfB2.a(14);
+    bOfB2.i(14);
     bOfB2.b(b2);
-    bOfB3.a(142);
+    bOfB3.i(142);
     bOfB3.b(b3);
-    bOfB4.a(142);
+    bOfB4.i(142);
     bOfB4.b(b);
   }
 
@@ -74,6 +74,9 @@ public class BeanTest {
     Assert.assertNotEquals(bOfB.hashCode(), bOfB3.hashCode());
     Assert.assertNotEquals(bOfB2.hashCode(), bOfB4.hashCode());
     Assert.assertNotEquals(bOfB.hashCode(), bOfB4.hashCode());
+
+    final Object o = "1";
+    Assert.assertNotEquals(b.hashCode(), o.hashCode());
   }
 
   @Test
@@ -87,12 +90,18 @@ public class BeanTest {
     Assert.assertNotEquals(bOfB2, bOfB3);
     Assert.assertNotEquals(bOfB, bOfB3);
     Assert.assertNotEquals(bOfB, bOfB4);
+
+    final Object o = "1";
+    Assert.assertNotEquals(b, o);
+    Assert.assertNotEquals(bOfB, o);
+    Assert.assertNotEquals(b, null);
+    Assert.assertNotEquals(bOfB, null);
   }
 
   @Test
   public void str() {
     final B b = new B();
-    b.a(14);
+    b.i(14);
     b.str("dfsdf");
     final String str = b.toString();
     assertValidJson(str);
@@ -101,7 +110,7 @@ public class BeanTest {
   @Test
   public void serialize() throws IOException, ClassNotFoundException {
     final BSerial b = new BSerial();
-    b.a(14);
+    b.i(14);
     b.b(this.b);
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -114,7 +123,7 @@ public class BeanTest {
   @Test
   public void externalize() throws IOException, ClassNotFoundException {
     final BExtern b = new BExtern();
-    b.a(14);
+    b.i(14);
     b.b(this.b);
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -127,7 +136,7 @@ public class BeanTest {
   @Test
   public void serializeBuildable() throws IOException, ClassNotFoundException {
     final BSerial b = new BSerial();
-    b.a(14);
+    b.i(14);
     b.b(this.b);
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -140,7 +149,7 @@ public class BeanTest {
   @Test
   public void externalizeBuildable() throws IOException, ClassNotFoundException {
     final BExtern b = new BExtern();
-    b.a(14);
+    b.i(14);
     b.b(this.b);
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -161,17 +170,17 @@ public class BeanTest {
 
   public static class B extends Bean<B> {
 
-    private int a;
+    private int i;
     private String str;
 
     public B() {}
 
-    public int a() {
-      return a;
+    public int i() {
+      return i;
     }
 
-    public void a(final int a) {
-      this.a = a;
+    public void i(final int i) {
+      this.i = i;
     }
 
     public String str() {
@@ -185,17 +194,17 @@ public class BeanTest {
 
   public static class BOfB extends Bean<B> {
 
-    private int a;
+    private int i;
     private B b;
 
     public BOfB() {}
 
-    public int a() {
-      return a;
+    public int i() {
+      return i;
     }
 
-    public void a(final int a) {
-      this.a = a;
+    public void i(final int i) {
+      this.i = i;
     }
 
     public B b() {
@@ -211,17 +220,17 @@ public class BeanTest {
 
     private static final long serialVersionUID = 1L;
 
-    private int a;
+    private int i;
     private B b;
 
     public BSerial() {}
 
-    public int a() {
-      return a;
+    public int i() {
+      return i;
     }
 
-    public void a(final int a) {
-      this.a = a;
+    public void i(final int i) {
+      this.i = i;
     }
 
     public B b() {
@@ -248,17 +257,17 @@ public class BeanTest {
 
   public static class BExtern extends Bean.Extern<BExtern> {
 
-    private int a;
+    private int i;
     private B b;
 
     public BExtern() {}
 
-    public int a() {
-      return a;
+    public int i() {
+      return i;
     }
 
-    public void a(final int a) {
-      this.a = a;
+    public void i(final int i) {
+      this.i = i;
     }
 
     public B b() {

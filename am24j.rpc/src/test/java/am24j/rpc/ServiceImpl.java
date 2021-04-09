@@ -83,4 +83,60 @@ public class ServiceImpl implements IService {
       }
     });
   }
+
+  @Override
+  public CompletionStage<B> getCallB(final int i, final B b) {
+    return CompletableFuture.completedStage(b.x(i));
+  }
+
+  @Override
+  public void streamB(final int i, final Subscriber<B> subscriber) {
+    final Semaphore semaphore = new Semaphore(i);
+    subscriber.onSubscribe(new Subscription() {
+
+      @Override
+      public void request(final long n) {
+        for (int j = 0; j < n; j++) {
+          if (semaphore.tryAcquire()) {
+            subscriber.onNext(B.of(i - semaphore.availablePermits() - 1));
+          } else {
+            subscriber.onComplete();
+          }
+        }
+      }
+
+      @Override
+      public void cancel() {
+
+      }
+    });
+  }
+
+  @Override
+  public CompletionStage<BOfB> getCallBOfB(final int i, final BOfB bOfB) {
+    return CompletableFuture.completedStage(bOfB.x(i));
+  }
+
+  @Override
+  public void streamBOfB(final int i, final Subscriber<BOfB> subscriber) {
+    final Semaphore semaphore = new Semaphore(i);
+    subscriber.onSubscribe(new Subscription() {
+
+      @Override
+      public void request(final long n) {
+        for (int j = 0; j < n; j++) {
+          if (semaphore.tryAcquire()) {
+            subscriber.onNext(BOfB.of(i - semaphore.availablePermits() - 1));
+          } else {
+            subscriber.onComplete();
+          }
+        }
+      }
+
+      @Override
+      public void cancel() {
+
+      }
+    });
+  }
 }

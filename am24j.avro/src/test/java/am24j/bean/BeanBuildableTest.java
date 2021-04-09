@@ -32,7 +32,7 @@ public class BeanBuildableTest {
 
   private final B b = new B();
   {
-    b.a(14);
+    b.i(14);
     b.str("dfsdf");
   }
 
@@ -88,7 +88,7 @@ public class BeanBuildableTest {
   @Test
   public void serializeBuildable() throws IOException, ClassNotFoundException {
     final BSerial b = new BSerial();
-    b.a(14);
+    b.i(14);
     b.b(this.b);
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -101,7 +101,7 @@ public class BeanBuildableTest {
   @Test
   public void externalizeBuildable() throws IOException, ClassNotFoundException {
     final BExtern b = new BExtern();
-    b.a(14);
+    b.i(14);
     b.b(this.b);
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
